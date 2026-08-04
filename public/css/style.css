@@ -15,6 +15,41 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
+[data-theme="dark"] {
+    --primary: #818cf8;
+    --primary-hover: #6366f1;
+    --secondary: #34d399;
+    --danger: #f87171;
+    --warning: #fbbf24;
+    --background: #111827;
+    --surface: #1f2937;
+    --surface-glass: rgba(31, 41, 55, 0.7);
+    --text-main: #f9fafb;
+    --text-muted: #9ca3af;
+    --border: #374151;
+}
+
+[data-theme="dark"] body {
+    background-image: linear-gradient(135deg, #111827 0%, #0f172a 100%);
+}
+
+[data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea {
+    background: rgba(31, 41, 55, 0.8);
+    color: var(--text-main);
+}
+
+[data-theme="dark"] input:focus, [data-theme="dark"] select:focus, [data-theme="dark"] textarea:focus {
+    background: #374151;
+}
+
+[data-theme="dark"] th {
+    background: rgba(55, 65, 81, 0.5);
+}
+
+[data-theme="dark"] tbody tr:hover {
+    background: rgba(55, 65, 81, 0.8);
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 * {

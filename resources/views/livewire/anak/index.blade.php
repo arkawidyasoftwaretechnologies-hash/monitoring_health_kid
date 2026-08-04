@@ -1,7 +1,12 @@
 <div class="card">
-    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <h2 class="card-title">Data Anak</h2>
-        <a href="{{ route('anak.create') }}" class="btn btn-primary">+ Tambah Anak</a>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <input type="text" wire:model.live.debounce.300ms="search" placeholder="Cari nama atau NIK..." style="padding: 0.5rem 1rem; width: 250px;">
+            </div>
+            <a href="{{ route('anak.create') }}" class="btn btn-primary">+ Tambah Anak</a>
+        </div>
     </div>
 
     <div class="table-wrapper" style="margin-top: 1rem;">

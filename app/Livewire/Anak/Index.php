@@ -7,6 +7,8 @@ use App\Models\Anak;
 
 class Index extends Component
 {
+    public $search = '';
+
     public function deleteAnak($id)
     {
         $anak = Anak::find($id);
@@ -26,7 +28,13 @@ class Index extends Component
     {
         $anaks = Anak::with(['puskesmas', 'pengukurans' => function($q) {
             $q->latest('tanggal_ukur');
-        }, 'pengukurans.hasilStatusGizi'])->orderBy('created_at', 'desc')->get();
+        }, 'pengukurans.hasilStatusGizi'])
+        ->when($this->search, function($query) {
+            $query->where('nama', 'like', '%' . $this->search . '%')
+                  ->orWhere('nik', 'like', '%' . $this->search . '%');
+        })
+        ->orderBy('created_at', 'desc')->get();
+        
         return view('livewire.anak.index', compact('anaks'));
     }
 }
