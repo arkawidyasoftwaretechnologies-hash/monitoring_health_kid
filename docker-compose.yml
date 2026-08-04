@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: monitoring-stunting-app
+    container_name: monitoring_stunting_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      # Don't overwrite the vendor directory if created in container
+      - /var/www/html/vendor
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=monitoring_stunting
+      - DB_USERNAME=root
+      - DB_PASSWORD=secret
+    depends_on:
+      - db
+    networks:
+      - stunting-network
+
+  webserver:
+    image: nginx:alpine
+    container_name: monitoring_stunting_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - stunting-network
+
+  db:
+    image: mysql:8.0
+    container_name: monitoring_stunting_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: monitoring_stunting
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_PASSWORD: secret
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - stunting-network
+
+networks:
+  stunting-network:
+    driver: bridge
+
+volumes:
+  dbdata:
