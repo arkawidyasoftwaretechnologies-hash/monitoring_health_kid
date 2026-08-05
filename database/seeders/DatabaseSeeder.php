@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RoleSeeder::class,
-            DummyWhoReferenceSeeder::class,
+            FullWhoReferenceSeeder::class,
         ]);
 
         $superAdminRole = \App\Models\Role::where('name', 'super_admin')->first();
