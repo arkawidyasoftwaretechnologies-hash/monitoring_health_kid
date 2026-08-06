@@ -17,4 +17,9 @@ class Pengukuran extends Model
     {
         return $this->hasOne(HasilStatusGizi::class);
     }
+
+    public function redFlagLogs()
+    {
+        return $this->hasMany(RedFlagLog::class);
+    }
 }

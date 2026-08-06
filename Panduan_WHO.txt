@@ -1,0 +1,54 @@
+PANDUAN PENGGUNAAN FITUR ANTROPOMETRI WHO
+APLIKASI MONITORING STUNTING KID HEALTH
+=============================================================================
+
+Aplikasi Monitoring Stunting Kid Health telah sepenuhnya terintegrasi dengan standar pengukuran dari World Health Organization (WHO) dan pedoman Kementerian Kesehatan RI. 
+
+Panduan ini bertujuan untuk membantu petugas atau kader dalam memahami indikator medis dan cara membaca sistem deteksi stunting di aplikasi.
+
+-----------------------------------------------------------------------------
+1. PARAMETER PENGUKURAN (DATA YANG HARUS DIISI)
+-----------------------------------------------------------------------------
+Saat melakukan pemeriksaan balita, petugas perlu mengisi parameter berikut:
+- Berat Badan (kg) & Tinggi/Panjang Badan (cm): Indikator mutlak untuk memantau tumbuh kembang dasar anak.
+- Lingkar Kepala (cm): Wajib diukur untuk mendeteksi dini kelainan pada volume dan perkembangan otak anak.
+- Lingkar Lengan Atas / LiLA (cm): Indikator deteksi cepat untuk melihat apakah balita mengalami kekurangan energi kronis atau gizi buruk akut.
+
+-----------------------------------------------------------------------------
+2. CARA MEMBACA HASIL STATUS GIZI (Z-SCORE)
+-----------------------------------------------------------------------------
+Segera setelah data disimpan, sistem (Kalkulator Medis) akan otomatis mengubah angka tersebut menjadi skor standar WHO (Z-Score). Sistem akan menampilkan 4 indeks berikut:
+
+- WAZ (Berat Badan menurut Umur): 
+  Mendeteksi apakah berat badan anak tergolong Sangat Kurang, Kurang, Normal, atau Risiko Berlebih.
+
+- HAZ (Tinggi Badan menurut Umur): 
+  Ini adalah indikator utama Stunting. Mendeteksi apakah anak berstatus Sangat Pendek (Severely Stunted), Pendek (Stunted), Normal, atau Tinggi.
+
+- BMIZ (Indeks Massa Tubuh menurut Umur): 
+  Mendeteksi proporsi gizi anak (Gizi Buruk, Gizi Kurang, Gizi Baik, Berisiko Obesitas, hingga Obesitas).
+
+- HCFA (Lingkar Kepala menurut Umur): 
+  Mendeteksi kemungkinan Mikrosefali (ukuran kepala kecil) atau Makrosefali (ukuran kepala besar di luar batas normal).
+
+-----------------------------------------------------------------------------
+3. SISTEM PERINGATAN DINI (RED FLAG) - GAWAT DARURAT
+-----------------------------------------------------------------------------
+Aplikasi dilengkapi dengan alarm peringatan klinis. Sistem akan otomatis memunculkan peringatan berwarna merah (Red Flag) jika mendeteksi kondisi darurat berikut:
+
+1. LiLA kurang dari 11.5 cm (Indikasi Gizi Buruk Akut Berat / SAM).
+2. Lingkar Kepala < -2 SD atau > 2 SD (Indikasi gangguan saraf/cairan otak).
+3. HAZ kurang dari -3 SD (Indikasi Stunting Kronis Ekstrem / Sangat Pendek).
+
+TINDAKAN: 
+Jika fitur Red Flag menyala pada aplikasi, petugas kader diwajibkan untuk segera merekomendasikan rujukan anak tersebut ke fasilitas kesehatan tingkat lanjut (Puskesmas/Dokter Spesialis Anak).
+
+-----------------------------------------------------------------------------
+4. FITUR VISUALISASI DAN LAPORAN (UNTUK KADER & DINKES)
+-----------------------------------------------------------------------------
+- Tabel Riwayat Anak: Menampilkan seluruh rangkuman pengukuran terakhir tanpa perlu membuka kartu fisik manual.
+- Grafik Pertumbuhan (Kurva WHO): Memperlihatkan secara visual kurva Berat Badan (Garis Hijau) dan Tinggi Badan (Garis Biru). Hati-hati jika kurva anak turun melintasi garis peringatan normal (-2 SD) atau batas gizi buruk (-3 SD).
+- Ekspor Laporan: Seluruh data metrik ini bisa di-download menjadi file PDF/Excel (Spreadsheet) untuk keperluan pelaporan resmi ke Dinas Kesehatan atau Puskesmas setempat.
+
+=============================================================================
+Dokumen ini merangkum fungsionalitas teknis dan klinis berbasis Permenkes No. 2 Tahun 2020 dan Standar Pertumbuhan WHO.

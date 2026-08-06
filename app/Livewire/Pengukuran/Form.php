@@ -23,6 +23,11 @@ class Form extends Component
     
     public $hasil = null; // Store result to show immediately
 
+    public $pengukuran_id;
+
+    public $alat_ukur_bb = 'Timbangan Digital';
+    public $alat_ukur_tb = 'Microtoise';
+
     protected $rules = [
         'tanggal_ukur' => 'required|date',
         'berat_badan' => 'required|numeric',
@@ -30,48 +35,90 @@ class Form extends Component
         'cara_ukur' => 'required|in:berdiri,telentang',
         'lingkar_kepala' => 'nullable|numeric',
         'lila' => 'nullable|numeric',
+        'alat_ukur_bb' => 'nullable|string',
+        'alat_ukur_tb' => 'nullable|string',
     ];
 
-    public function mount(Anak $anak)
+    public function mount(Anak $anak = null, Pengukuran $pengukuran = null)
     {
-        $this->anak = $anak;
-        $this->tanggal_ukur = date('Y-m-d');
+        if ($pengukuran && $pengukuran->exists) {
+            $this->pengukuran_id = $pengukuran->id;
+            $this->anak = $pengukuran->anak;
+            $this->tanggal_ukur = $pengukuran->tanggal_ukur;
+            $this->berat_badan = $pengukuran->berat_badan;
+            $this->tinggi_badan = $pengukuran->tinggi_badan;
+            $this->cara_ukur = $pengukuran->cara_ukur;
+            $this->lingkar_kepala = $pengukuran->lingkar_kepala;
+            $this->lila = $pengukuran->lila;
+            $this->alat_ukur_bb = $pengukuran->alat_ukur_bb ?? 'Timbangan Digital';
+            $this->alat_ukur_tb = $pengukuran->alat_ukur_tb ?? 'Microtoise';
+        } else {
+            $this->anak = $anak;
+            $this->tanggal_ukur = date('Y-m-d');
+        }
     }
 
-    public function submit(GrowthCalculationService $growthService, ZScoreService $zScoreService, NutritionService $nutritionService)
+    public function submit(GrowthCalculationService $growthService, ZScoreService $zScoreService, NutritionService $nutritionService, \App\Services\RedFlagService $redFlagService)
     {
         $this->validate();
 
         $usiaBulan = $growthService->hitungUsiaBulan($this->anak->tanggal_lahir, $this->tanggal_ukur);
         $imt = $growthService->hitungIMT($this->berat_badan, $this->tinggi_badan);
+        
+        $petugasId = auth()->id() ?? 1; // Default to dummy user 1 if not logged in
 
-        $pengukuran = Pengukuran::create([
-            'anak_id' => $this->anak->id,
-            'tanggal_ukur' => $this->tanggal_ukur,
-            'usia_bulan' => $usiaBulan,
-            'berat_badan' => $this->berat_badan,
-            'tinggi_badan' => $this->tinggi_badan,
-            'cara_ukur' => $this->cara_ukur,
-            'lingkar_kepala' => $this->lingkar_kepala ?: null,
-            'lila' => $this->lila ?: null,
-        ]);
+        if ($this->pengukuran_id) {
+            $pengukuran = Pengukuran::find($this->pengukuran_id);
+            $pengukuran->update([
+                'tanggal_ukur' => $this->tanggal_ukur,
+                'usia_bulan' => $usiaBulan,
+                'berat_badan' => $this->berat_badan,
+                'tinggi_badan' => $this->tinggi_badan,
+                'cara_ukur' => $this->cara_ukur,
+                'lingkar_kepala' => $this->lingkar_kepala ?: null,
+                'lila' => $this->lila ?: null,
+                'alat_ukur_bb' => $this->alat_ukur_bb,
+                'alat_ukur_tb' => $this->alat_ukur_tb,
+                'petugas_id' => $petugasId,
+            ]);
+            // Delete old hasilStatusGizi to replace it
+            $pengukuran->hasilStatusGizi()->delete();
+            \App\Models\RedFlagLog::where('pengukuran_id', $this->pengukuran_id)->delete();
+        } else {
+            $pengukuran = Pengukuran::create([
+                'anak_id' => $this->anak->id,
+                'tanggal_ukur' => $this->tanggal_ukur,
+                'usia_bulan' => $usiaBulan,
+                'berat_badan' => $this->berat_badan,
+                'tinggi_badan' => $this->tinggi_badan,
+                'cara_ukur' => $this->cara_ukur,
+                'lingkar_kepala' => $this->lingkar_kepala ?: null,
+                'lila' => $this->lila ?: null,
+                'alat_ukur_bb' => $this->alat_ukur_bb,
+                'alat_ukur_tb' => $this->alat_ukur_tb,
+                'petugas_id' => $petugasId,
+            ]);
+        }
 
         $waz = $zScoreService->getZScore('waz', $this->anak->jenis_kelamin, $usiaBulan, $this->berat_badan);
         $haz = $zScoreService->getZScore('haz', $this->anak->jenis_kelamin, $usiaBulan, $this->tinggi_badan);
         $bmiz = $zScoreService->getZScore('bmiz', $this->anak->jenis_kelamin, $usiaBulan, $imt);
         
+        // Calculate WHZ using new signature (gender, ht, wt, age, cara_ukur)
+        $whz = $zScoreService->getWHZ($this->anak->jenis_kelamin, (float)$this->tinggi_badan, (float)$this->berat_badan, $usiaBulan, $this->cara_ukur);
+        
         $hcfa = null;
         if (!empty($this->lingkar_kepala)) {
             $hcfa = $zScoreService->getZScore('hcfa', $this->anak->jenis_kelamin, $usiaBulan, $this->lingkar_kepala);
         }
-        
-        $redFlagCheck = $nutritionService->checkRedFlag(
-            $waz ?? 0, 
-            $haz ?? 0, 
-            $bmiz ?? 0,
-            $hcfa,
-            $this->lila ? (float)$this->lila : null
-        );
+
+        // Fetch previous measurement to generate narrative
+        $previousPengukuran = Pengukuran::where('anak_id', $this->anak->id)
+            ->where('tanggal_ukur', '<', $this->tanggal_ukur)
+            ->orderBy('tanggal_ukur', 'desc')
+            ->first();
+            
+        $previousHasil = $previousPengukuran ? $previousPengukuran->hasilStatusGizi : null;
 
         $this->hasil = HasilStatusGizi::create([
             'pengukuran_id' => $pengukuran->id,
@@ -79,15 +126,39 @@ class Form extends Component
             'haz' => $haz,
             'bmiz' => $bmiz,
             'hcfa' => $hcfa,
+            'whz' => $whz,
             'status_bb_u' => $waz !== null ? $nutritionService->determineStatusBBU($waz) : null,
             'status_tb_u' => $haz !== null ? $nutritionService->determineStatusTBU($haz) : null,
             'status_imt_u' => $bmiz !== null ? $nutritionService->determineStatusIMTU($bmiz) : null,
             'status_lk_u' => $hcfa !== null ? $nutritionService->determineStatusLKU($hcfa) : null,
-            'status_lila' => $nutritionService->determineStatusLiLA($this->lila ? (float)$this->lila : null),
-            'red_flag' => $redFlagCheck['is_red_flag'],
-            'catatan_red_flag' => $redFlagCheck['catatan'],
+            'status_bb_tb' => $whz !== null ? $nutritionService->determineStatusBBTB($whz) : null,
+            'status_lila' => $nutritionService->determineStatusLiLA($this->lila ? (float)$this->lila : null, $usiaBulan),
+            'red_flag' => false, // Will update below
+            'catatan_red_flag' => null,
         ]);
+
+        // Evaluate Red Flags
+        $flags = $redFlagService->evaluasi($pengukuran, $this->hasil);
         
+        if (count($flags) > 0) {
+            $this->hasil->update(['red_flag' => true]); // maintain legacy column
+            foreach ($flags as $flag) {
+                \App\Models\RedFlagLog::create([
+                    'pengukuran_id' => $pengukuran->id,
+                    'anak_id' => $this->anak->id,
+                    'kategori_flag' => $flag['kategori'],
+                    'severity' => $flag['severity'],
+                    'nilai_pemicu' => $flag['nilai'],
+                    'rekomendasi_rujukan' => $flag['rekomendasi'],
+                    'status' => 'baru'
+                ]);
+            }
+        }
+        
+        // Generate narrative after creating the new record, passing the current record to generateNarrative
+        $narasi = $nutritionService->generateNarrative($this->hasil, $previousHasil, $pengukuran, $previousPengukuran);
+        $this->hasil->update(['narasi_interpretasi' => $narasi]);
+
         // Show success logic or reset
         session()->flash('message', 'Data pengukuran berhasil disimpan dan dikalkulasi.');
     }

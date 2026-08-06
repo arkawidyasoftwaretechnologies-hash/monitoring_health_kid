@@ -64,11 +64,13 @@ class NutritionService
 
     /**
      * Menentukan status berdasarkan Lingkar Lengan Atas (LiLA)
-     * Referensi umum: < 11.5 cm = SAM, 11.5 - 12.5 cm = MAM, > 12.5 cm = Normal
+     * Valid secara medis hanya untuk anak usia 6 - 59 bulan.
      */
-    public function determineStatusLiLA(?float $lila): ?string
+    public function determineStatusLiLA(?float $lila, int $usiaBulan): ?string
     {
         if ($lila === null) return null;
+        if ($usiaBulan < 6 || $usiaBulan > 59) return null; // LiLA tidak standar untuk < 6 bulan
+
         if ($lila < 11.5) return 'Gizi Buruk Akut (SAM)';
         if ($lila >= 11.5 && $lila < 12.5) return 'Gizi Kurang Akut (MAM)';
         return 'Normal';
@@ -76,20 +78,22 @@ class NutritionService
 
     /**
      * Mengecek apakah ada red flag
+     * Menambahkan pengecekan null safety dan batasan usia.
      */
-    public function checkRedFlag(float $waz, float $haz, float $whz, ?float $hcfa = null, ?float $lila = null): array
+    public function checkRedFlag(?float $waz, ?float $haz, ?float $whz, ?float $hcfa, ?float $lila, int $usiaBulan): array
     {
         $flags = [];
-        if ($haz < -3) $flags[] = 'HAZ < -3SD (Severely Stunted)';
-        if ($waz < -3) $flags[] = 'WAZ < -3SD (Severely Underweight)';
-        if ($whz < -3) $flags[] = 'WHZ/BMIZ < -3SD (Severely Wasted)';
+        if ($haz !== null && $haz < -3) $flags[] = 'HAZ < -3SD (Severely Stunted)';
+        if ($waz !== null && $waz < -3) $flags[] = 'WAZ < -3SD (Severely Underweight)';
+        if ($whz !== null && $whz < -3) $flags[] = 'WHZ/BMIZ < -3SD (Severely Wasted)';
         
         if ($hcfa !== null) {
             if ($hcfa < -2) $flags[] = 'Lingkar Kepala < -2SD (Mikrosefali)';
             if ($hcfa > 2) $flags[] = 'Lingkar Kepala > +2SD (Makrosefali)';
         }
 
-        if ($lila !== null && $lila < 11.5) {
+        // LiLA red flag valid hanya untuk 6-59 bln
+        if ($lila !== null && $usiaBulan >= 6 && $usiaBulan <= 59 && $lila < 11.5) {
             $flags[] = 'LiLA < 11.5cm (SAM - Severe Acute Malnutrition)';
         }
 
@@ -97,5 +101,51 @@ class NutritionService
             return ['is_red_flag' => false, 'catatan' => null];
         }
         return ['is_red_flag' => true, 'catatan' => implode(', ', $flags) . ' - Segera rujuk ke faskes/dokter spesialis.'];
+    }
+
+    /**
+     * Generate narasi otomatis (interpretasi kunjungan) untuk memandu kader.
+     */
+    public function generateNarrative($currentHasil, $previousHasil, $currentPengukuran, $previousPengukuran): string
+    {
+        if (!$currentHasil || !$currentPengukuran) return "Data tidak lengkap untuk diinterpretasikan.";
+
+        $narasi = [];
+        
+        // Cek tren gizi umum (BB/U)
+        if ($currentHasil->waz !== null) {
+            if (str_contains(strtolower($currentHasil->status_bb_u), 'kurang')) {
+                $narasi[] = "Berat badan anak saat ini berada di bawah kurva normal (" . $currentHasil->status_bb_u . ").";
+            } else {
+                $narasi[] = "Berat badan anak saat ini terpantau normal.";
+            }
+        }
+
+        // Bandingkan dengan bulan sebelumnya
+        if ($previousPengukuran && $previousHasil) {
+            $bbDiff = $currentPengukuran->berat_badan - $previousPengukuran->berat_badan;
+            $tbDiff = $currentPengukuran->tinggi_badan - $previousPengukuran->tinggi_badan;
+            
+            if ($bbDiff <= 0) {
+                $narasi[] = "⚠️ Peringatan: Berat badan tidak naik atau justru turun dibandingkan kunjungan sebelumnya (Delta: " . $bbDiff . " kg). Hal ini perlu dievaluasi pola makannya.";
+            } else {
+                $narasi[] = "Terdapat kenaikan BB sebesar " . $bbDiff . " kg dari bulan lalu.";
+            }
+            
+            if ($currentHasil->haz !== null && $previousHasil->haz !== null) {
+                if ($currentHasil->haz < $previousHasil->haz - 0.2) {
+                    $narasi[] = "Tren pertumbuhan tinggi badan melambat dibanding grafik standar WHO.";
+                }
+            }
+        } else {
+            $narasi[] = "Ini merupakan catatan pengukuran pertama/awal di sistem.";
+        }
+
+        // Red flag injection
+        if ($currentHasil->red_flag) {
+            $narasi[] = "🚨 Peringatan Medis: " . $currentHasil->catatan_red_flag;
+        }
+
+        return implode(' ', $narasi);
     }
 }

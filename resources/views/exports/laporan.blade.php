@@ -4,9 +4,10 @@
     <meta charset="utf-8">
     <title>Laporan Pengukuran Stunting</title>
     <style>
+        body { font-family: sans-serif; font-size: 8pt; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #000; padding: 5px; text-align: left; }
-        th { background-color: #f2f2f2; }
+        th, td { border: 1px solid #000; padding: 3px; text-align: left; }
+        th { background-color: #f2f2f2; font-size: 8pt; }
     </style>
 </head>
 <body>
@@ -16,7 +17,6 @@
             <tr>
                 <th>No</th>
                 <th>Nama Anak</th>
-                <th>NIK</th>
                 <th>Jenis Kelamin</th>
                 <th>Tanggal Ukur</th>
                 <th>Usia (Bulan)</th>
@@ -41,7 +41,6 @@
             <tr>
                 <td>{{ $index + 1 }}</td>
                 <td>{{ $row->anak->nama ?? '-' }}</td>
-                <td>{{ $row->anak->nik ?? '-' }}</td>
                 <td>{{ $row->anak->jenis_kelamin ?? '-' }}</td>
                 <td>{{ $row->tanggal_ukur }}</td>
                 <td>{{ $row->usia_bulan }}</td>

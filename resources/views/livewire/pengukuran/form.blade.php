@@ -2,7 +2,7 @@
     <!-- Form Input -->
     <div class="card">
         <div class="card-header">
-            <h2 class="card-title">Input Pengukuran: {{ $anak->nama }}</h2>
+            <h2 class="card-title">{{ $pengukuran_id ? 'Edit Pengukuran' : 'Input Pengukuran' }}: {{ $anak->nama }}</h2>
         </div>
         
         @if (session()->has('message'))
@@ -49,6 +49,27 @@
                 </div>
             </div>
 
+            <div style="display: flex; gap: 1rem;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Alat Ukur Berat</label>
+                    <select wire:model="alat_ukur_bb">
+                        <option value="Timbangan Digital">Timbangan Digital</option>
+                        <option value="Timbangan Dacin">Timbangan Dacin</option>
+                        <option value="Timbangan Injak">Timbangan Injak</option>
+                        <option value="Timbangan Gantung">Timbangan Gantung</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="flex: 1;">
+                    <label>Alat Ukur Panjang/Tinggi</label>
+                    <select wire:model="alat_ukur_tb">
+                        <option value="Microtoise">Microtoise</option>
+                        <option value="Infantometer">Infantometer</option>
+                        <option value="Pita Meteran">Pita Meteran</option>
+                    </select>
+                </div>
+            </div>
+
             <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Hitung & Simpan Data</button>
         </form>
     </div>
@@ -84,6 +105,23 @@
                         <span class="badge {{ str_contains(strtolower($hasil->status_imt_u), 'kurang') ? 'badge-warning' : (str_contains(strtolower($hasil->status_imt_u), 'lebih') || str_contains(strtolower($hasil->status_imt_u), 'obesitas') ? 'badge-danger' : 'badge-normal') }}">{{ $hasil->status_imt_u ?? 'Data tidak tersedia' }}</span>
                     </div>
                 </div>
+                
+                <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+                    <h3 style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">Berat Badan menurut Panjang/Tinggi Badan (WHZ)</h3>
+                    <div style="display: flex; align-items: baseline; gap: 1rem;">
+                        <span style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ $hasil->whz ?? 'N/A' }} SD</span>
+                        <span class="badge {{ str_contains(strtolower($hasil->status_bb_tb), 'kurang') || str_contains(strtolower($hasil->status_bb_tb), 'buruk') ? 'badge-warning' : (str_contains(strtolower($hasil->status_bb_tb), 'lebih') || str_contains(strtolower($hasil->status_bb_tb), 'obesitas') ? 'badge-danger' : 'badge-normal') }}">{{ $hasil->status_bb_tb ?? 'Data tidak tersedia' }}</span>
+                    </div>
+                </div>
+
+                @if($hasil->narasi_interpretasi)
+                    <div style="background: rgba(52,152,219,0.1); border-left: 4px solid #3498db; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <h4 style="color: #2980b9; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem;">
+                            💡 Kesimpulan & Saran Kader
+                        </h4>
+                        <p style="color: #2c3e50; font-size: 0.9rem; line-height: 1.5;">{{ $hasil->narasi_interpretasi }}</p>
+                    </div>
+                @endif
 
                 @if($hasil->hcfa !== null || $hasil->status_lila !== null)
                 <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); display: flex; gap: 2rem;">

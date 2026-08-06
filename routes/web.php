@@ -15,6 +15,8 @@ Route::get('/', function () {
 Route::get('/dashboard', Dashboard::class)->name('dashboard');
 Route::get('/anak', AnakIndex::class)->name('anak.index');
 Route::get('/anak/create', AnakForm::class)->name('anak.create');
+Route::get('/anak/{anak}/edit', AnakForm::class)->name('anak.edit');
 Route::get('/anak/{anak}/ukur', PengukuranForm::class)->name('pengukuran.create');
+Route::get('/pengukuran/{pengukuran}/edit', PengukuranForm::class)->name('pengukuran.edit');
 Route::get('/anak/{anak}/grafik', PengukuranChart::class)->name('pengukuran.chart');
 Route::get('/laporan', LaporanIndex::class)->name('laporan.index');
