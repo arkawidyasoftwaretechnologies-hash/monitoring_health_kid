@@ -65,7 +65,7 @@ class Form extends Component
         $usiaBulan = $growthService->hitungUsiaBulan($this->anak->tanggal_lahir, $this->tanggal_ukur);
         $imt = $growthService->hitungIMT($this->berat_badan, $this->tinggi_badan);
         
-        $petugasId = auth()->id() ?? 1; // Default to dummy user 1 if not logged in
+        $petugasId = auth()->id(); // Nullable if not logged in, prevents foreign key error
 
         if ($this->pengukuran_id) {
             $pengukuran = Pengukuran::find($this->pengukuran_id);
