@@ -55,13 +55,18 @@
     </div>
 
     <!-- Table -->
-    <div class="glass-panel animate-fade-in" style="padding: 1.5rem;">
-        <div class="table-wrapper" style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem;">
-                <thead>
+    <div class="glass-panel animate-fade-in" style="padding: 1.5rem;" x-data="tableScroll()">
+        <!-- Top Scrollbar -->
+        <div x-ref="topScroll" @scroll="syncTop" style="overflow-x: auto; overflow-y: hidden; margin-bottom: 0.5rem; height: 12px; background: rgba(0,0,0,0.02); border-radius: 4px;">
+            <div x-ref="dummy" style="height: 1px;"></div>
+        </div>
+        
+        <div class="table-wrapper" x-ref="wrapper" @scroll="syncBottom" style="overflow: auto; max-height: 65vh; border: 1px solid var(--border); border-radius: 0.5rem;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem; position: relative;">
+                <thead style="position: sticky; top: 0; z-index: 10; background: var(--surface); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                     <!-- Baris 1: Group header -->
                     <tr style="border-bottom: 1px solid rgba(52,152,219,0.15);">
-                        <th colspan="4" style="padding: 0.5rem 0.5rem 0.3rem; color: #3498db; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; background: transparent;">
+                        <th colspan="4" style="padding: 0.5rem 0.5rem 0.3rem; color: #3498db; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; background: var(--surface);">
                             📋 Identitas Anak
                         </th>
                         <th colspan="13" style="padding: 0.5rem 0.5rem 0.3rem; color: #1abc9c; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; border-left: 2px solid rgba(26,188,156,0.3); background: transparent;">
@@ -182,13 +187,17 @@
                             
                             <td style="padding: 0.6rem 0.5rem;">
                                 <div style="display: flex; gap: 0.3rem;">
+                                    @if(!Auth::user()->isDokter())
                                     <a href="{{ route('anak.edit', $anak->id) }}" title="Edit Profil Anak" style="padding: 4px 8px; background: rgba(52,152,219,0.15); border: 1px solid #3498db; color: #3498db; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none;">✏️ Profil</a>
+                                    @endif
                                     
                                     @if($latest)
                                         <a href="{{ route('pengukuran.edit', $latest->id) }}" title="{{ Auth::user()->isDokter() ? 'Isi Analisis Medis & Tindak Lanjut' : 'Edit Pengukuran & Rekomendasi Terakhir' }}" style="padding: 4px 8px; background: rgba(243,156,18,0.15); border: 1px solid #f39c12; color: #f39c12; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none;">{{ Auth::user()->isDokter() ? '🩺 Analisis Medis' : '✍️ Edit Ukur' }}</a>
                                     @endif
                                     
+                                    @if(!Auth::user()->isDokter())
                                     <a href="{{ route('pengukuran.create', $anak->id) }}" title="Tambah Pengukuran Baru" style="padding: 4px 8px; background: rgba(39,174,96,0.2); border: 1px solid #2ecc71; color: #2ecc71; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none; white-space: nowrap;">+ Ukur Baru</a>
+                                    @endif
                                     <a href="{{ route('pengukuran.chart', $anak->id) }}" style="padding: 4px 8px; background: rgba(155,89,182,0.2); border: 1px solid #9b59b6; color: #9b59b6; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none; white-space: nowrap;">📄 Grafik</a>
                                     
                                     @if($latest && $latest->assessmentPlan)
@@ -196,7 +205,9 @@
                                         <a href="{{ route('cetak.orangtua', $latest->id) }}" target="_blank" title="Cetak Lembar Ortu" style="padding: 4px 8px; background: rgba(22,160,133,0.15); border: 1px solid #16a085; color: #16a085; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none;">👨‍👩‍👧</a>
                                     @endif
 
+                                    @if(Auth::user()->isAdmin() || Auth::user()->isOperator())
                                     <button wire:click="deleteAnak({{ $anak->id }})" wire:confirm="Yakin ingin menghapus data anak ini beserta seluruh riwayat pengukurannya?" style="padding: 4px 8px; background: rgba(231,76,60,0.15); border: 1px solid #e74c3c; color: #e74c3c; border-radius: 5px; cursor: pointer; font-size: 0.72rem;" title="Hapus">🗑</button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -205,9 +216,11 @@
                             <td colspan="16" style="padding: 3rem; text-align: center; color: var(--text-muted);">
                                 <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">👶</div>
                                 Tidak ada anak yang sesuai filter.<br>
+                                @if(!Auth::user()->isDokter())
                                 <a href="{{ route('anak.create') }}" style="display: inline-block; margin-top: 1rem; padding: 8px 16px; border-radius: 8px; background: rgba(52,152,219,0.2); border: 1px solid #3498db; color: #3498db; cursor: pointer; text-decoration: none;">
                                     + Tambah Data Anak
                                 </a>
+                                @endif
                             </td>
                         </tr>
                     @endforelse
@@ -215,4 +228,38 @@
             </table>
         </div>
     </div>
+    
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('tableScroll', () => ({
+                init() {
+                    // Observe DOM changes or resize to update dummy width
+                    this.updateWidth();
+                    window.addEventListener('resize', () => this.updateWidth());
+                    
+                    // Livewire hook if table content changes
+                    if (window.Livewire) {
+                        Livewire.hook('morph.updated', () => {
+                            setTimeout(() => this.updateWidth(), 100);
+                        });
+                    }
+                },
+                updateWidth() {
+                    if (this.$refs.wrapper && this.$refs.dummy) {
+                        this.$refs.dummy.style.width = this.$refs.wrapper.scrollWidth + 'px';
+                    }
+                },
+                syncTop(e) {
+                    if (this.$refs.wrapper) {
+                        this.$refs.wrapper.scrollLeft = e.target.scrollLeft;
+                    }
+                },
+                syncBottom(e) {
+                    if (this.$refs.topScroll) {
+                        this.$refs.topScroll.scrollLeft = e.target.scrollLeft;
+                    }
+                }
+            }))
+        })
+    </script>
 </div>

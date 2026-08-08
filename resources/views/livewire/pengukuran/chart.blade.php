@@ -63,13 +63,11 @@
     @endphp
 
     @if($latestHasil && $latestHasil->narasi_interpretasi)
-        <div style="background: rgba(52,152,219,0.1); border-left: 4px solid #3498db; padding: 1.2rem; border-radius: 0.5rem; margin-bottom: 2rem;" class="animate-fade-in">
-            <h3 style="color: #2980b9; display: flex; align-items: center; gap: 0.5rem; font-weight: 700; margin-bottom: 0.5rem;">
+        <div class="alert-info animate-fade-in" style="margin-bottom: 2rem;">
+            <h3 class="alert-info-title">
                 💡 Kesimpulan & Evaluasi Klinis Terkini
             </h3>
-            <p style="color: #2c3e50; font-size: 0.95rem; line-height: 1.6; margin: 0;">
-                {{ $latestHasil->narasi_interpretasi }}
-            </p>
+            <p class="alert-info-text">{!! str_replace("\n", '<br>', e($latestHasil->narasi_interpretasi)) !!}</p>
         </div>
     @endif
 
@@ -302,7 +300,7 @@
                         <th colspan="2" style="padding: 0.5rem 0.5rem 0.3rem; color: #3498db; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; background: transparent;">
                             🗓 Waktu Pengukuran
                         </th>
-                        <th colspan="11" style="padding: 0.5rem 0.5rem 0.3rem; color: #1abc9c; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; border-left: 2px solid rgba(26,188,156,0.3); background: transparent;">
+                        <th colspan="14" style="padding: 0.5rem 0.5rem 0.3rem; color: #1abc9c; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; border-left: 2px solid rgba(26,188,156,0.3); background: transparent;">
                             📏 Hasil Pengukuran (Z-Score)
                         </th>
                     </tr>
@@ -312,8 +310,8 @@
                             <th style="padding: 0.6rem 0.5rem; color: var(--text-muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; background: transparent;">{{ $h }}</th>
                         @endforeach
                         
-                        @foreach(['BB (kg)', 'TB/PB (cm)', 'LK (cm)', 'LiLA (cm)', 'IMT/U', 'WHZ', 'WAZ', 'HAZ', 'LK/U', 'Alat/Petugas', 'Aksi'] as $h)
-                            <th style="padding: 0.6rem 0.5rem; color: #1abc9c; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; border-left: {{ $h === 'BB (kg)' ? '2px solid rgba(26,188,156,0.3)' : 'none' }}; text-align: center; background: transparent;">{{ $h }}</th>
+                        @foreach(['BB (kg)', 'TB (cm)', 'LK (cm)', 'LiLA', 'WAZ (BB/U)', 'HAZ (TB/U)', 'WHZ (BB/TB)', 'BMIZ (IMT/U)', 'HCFA (LK/U)', 'Status Pertumbuhan (TB)', 'Status Gizi Tambahan', 'Petugas', 'Aksi'] as $h)
+                            <th style="padding: 0.6rem 0.5rem; color: #1abc9c; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; border-left: {{ $h === 'BB (kg)' ? '2px solid rgba(26,188,156,0.3)' : 'none' }}; text-align: center; background: transparent;">{{ $h }}</th>
                         @endforeach
                     </tr>
                 </thead>
@@ -341,7 +339,7 @@
                             }
                         }
                     @endphp
-                    @forelse($anak->pengukurans as $row)
+                    @forelse($anak->pengukurans->sortByDesc('tanggal_ukur') as $row)
                         @php
                             $hasil = $row->hasilStatusGizi;
                         @endphp
@@ -359,45 +357,50 @@
                             <td style="padding: 0.6rem 0.5rem; text-align: center;">{{ $row->lingkar_kepala ?? '—' }}</td>
                             <td style="padding: 0.6rem 0.5rem; text-align: center;">{{ $row->lila ?? '—' }}</td>
                             
-                            <!-- Z-Scores and Statuses -->
-                            @php $z1 = getChartZColor($hasil->bmiz ?? null); @endphp
+                            <!-- Z-Scores -->
+                            @foreach([$hasil->waz ?? null, $hasil->haz ?? null, $hasil->whz ?? null, $hasil->bmiz ?? null, $hasil->hcfa ?? null] as $z)
+                                @php $zc = getChartZColor($z); @endphp
+                                <td style="padding: 0.6rem 0.5rem; text-align: center;">
+                                    <span style="padding: 1px 5px; border-radius: 4px; font-weight: 700; font-family: monospace; font-size: 0.75rem; background: {{ $zc['bg'] }}; color: {{ $zc['color'] }};">
+                                        {{ $z !== null ? number_format((float)$z, 2) : '—' }}
+                                    </span>
+                                </td>
+                            @endforeach
+                            
+                            <!-- Status Pertumbuhan -->
                             <td style="padding: 0.6rem 0.5rem; text-align: center;">
-                                <span style="padding: 1px 5px; border-radius: 4px; font-weight: 700; font-family: monospace; font-size: 0.75rem; background: {{ $z1['bg'] }}; color: {{ $z1['color'] }}; display: inline-block; margin-bottom: 3px;">
-                                    {{ $hasil->bmiz ?? '—' }}
-                                </span><br>
-                                <span style="font-size: 0.6rem; color: {{ getChartStatusStyle($hasil->status_imt_u ?? '')['color'] }}; font-weight: 600;">
-                                    {{ $hasil->status_imt_u ?? '-' }}
-                                </span>
+                                @if($hasil)
+                                    <span style="padding: 2px 7px; border-radius: 20px; font-size: 0.65rem; font-weight: 700; background: {{ getChartStatusStyle($hasil->status_tb_u)['bg'] }}; color: {{ getChartStatusStyle($hasil->status_tb_u)['color'] }}; white-space: nowrap;">
+                                        {{ $hasil->status_tb_u ?? 'Belum Kalkulasi' }}
+                                        @if($hasil->red_flag) ⚠ @endif
+                                    </span>
+                                @else
+                                    <span style="padding: 2px 7px; border-radius: 20px; font-size: 0.65rem; font-weight: 700; background: rgba(149,165,166,0.2); color: #95a5a6; white-space: nowrap;">
+                                        Belum Diukur
+                                    </span>
+                                @endif
                             </td>
                             
-                            @php $z2 = getChartZColor($hasil->waz ?? null); @endphp
-                            <td style="padding: 0.6rem 0.5rem; text-align: center;">
-                                <span style="padding: 1px 5px; border-radius: 4px; font-weight: 700; font-family: monospace; font-size: 0.75rem; background: {{ $z2['bg'] }}; color: {{ $z2['color'] }}; display: inline-block; margin-bottom: 3px;">
-                                    {{ $hasil->waz ?? '—' }}
-                                </span><br>
-                                <span style="font-size: 0.6rem; color: {{ getChartStatusStyle($hasil->status_bb_u ?? '')['color'] }}; font-weight: 600;">
-                                    {{ $hasil->status_bb_u ?? '-' }}
-                                </span>
-                            </td>
-                            
-                            @php $z3 = getChartZColor($hasil->haz ?? null); @endphp
-                            <td style="padding: 0.6rem 0.5rem; text-align: center;">
-                                <span style="padding: 1px 5px; border-radius: 4px; font-weight: 700; font-family: monospace; font-size: 0.75rem; background: {{ $z3['bg'] }}; color: {{ $z3['color'] }}; display: inline-block; margin-bottom: 3px;">
-                                    {{ $hasil->haz ?? '—' }}
-                                </span><br>
-                                <span style="font-size: 0.6rem; color: {{ getChartStatusStyle($hasil->status_tb_u ?? '')['color'] }}; font-weight: 600;">
-                                    {{ $hasil->status_tb_u ?? '-' }}
-                                </span>
-                            </td>
-                            
-                            @php $z4 = getChartZColor($hasil->hcfa ?? null); @endphp
-                            <td style="padding: 0.6rem 0.5rem; text-align: center;">
-                                <span style="padding: 1px 5px; border-radius: 4px; font-weight: 700; font-family: monospace; font-size: 0.75rem; background: {{ $z4['bg'] }}; color: {{ $z4['color'] }}; display: inline-block; margin-bottom: 3px;">
-                                    {{ $hasil->hcfa ?? '—' }}
-                                </span><br>
-                                <span style="font-size: 0.6rem; color: {{ getChartStatusStyle($hasil->status_lk_u ?? '')['color'] }}; font-weight: 600;">
-                                    {{ $hasil->status_lk_u ?? '-' }}
-                                </span>
+                            <!-- Status Gizi Tambahan -->
+                            <td style="padding: 0.6rem 0.5rem; text-align: left;">
+                                @if($hasil)
+                                    <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                        <div style="font-size: 0.62rem; line-height: 1.1; color: var(--text-secondary); display: flex; justify-content: space-between; gap: 0.5rem;">
+                                            <span>BB/TB:</span>
+                                            <strong style="color: {{ getChartStatusStyle($hasil->status_bb_tb)['color'] }}; text-align: right;">{{ $hasil->status_bb_tb ?? '—' }}</strong>
+                                        </div>
+                                        <div style="font-size: 0.62rem; line-height: 1.1; color: var(--text-secondary); display: flex; justify-content: space-between; gap: 0.5rem;">
+                                            <span>BB/U:</span>
+                                            <strong style="color: {{ getChartStatusStyle($hasil->status_bb_u)['color'] }}; text-align: right;">{{ $hasil->status_bb_u ?? '—' }}</strong>
+                                        </div>
+                                        <div style="font-size: 0.62rem; line-height: 1.1; color: var(--text-secondary); display: flex; justify-content: space-between; gap: 0.5rem;">
+                                            <span>LK/U:</span>
+                                            <strong style="color: {{ getChartStatusStyle($hasil->status_lk_u)['color'] }}; text-align: right;">{{ $hasil->status_lk_u ?? '—' }}</strong>
+                                        </div>
+                                    </div>
+                                @else
+                                    <span style="color: var(--text-muted); text-align: center; display: block;">—</span>
+                                @endif
                             </td>
                             
                             <td style="padding: 0.6rem 0.5rem; text-align: center;">

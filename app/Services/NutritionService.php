@@ -112,13 +112,31 @@ class NutritionService
 
         $narasi = [];
         
-        // Cek tren gizi umum (BB/U)
+        // Fetch Ideal References
+        $jk = $currentPengukuran->anak->jenis_kelamin ?? 'L';
+        $usia = $currentPengukuran->usia_bulan ?? 0;
+        
+        $idealBBRef = \App\Models\WhoGrowthReference::where('indeks', 'waz')
+                        ->where('jenis_kelamin', $jk)->where('usia_bulan', $usia)->first();
+                        
+        $idealTBRef = \App\Models\WhoGrowthReference::where('indeks', 'haz')
+                        ->where('jenis_kelamin', $jk)->where('usia_bulan', $usia)->first();
+
+        // 1. Kesimpulan Berat Badan
         if ($currentHasil->waz !== null) {
-            if (str_contains(strtolower($currentHasil->status_bb_u), 'kurang')) {
-                $narasi[] = "Berat badan anak saat ini berada di bawah kurva normal (" . $currentHasil->status_bb_u . ").";
-            } else {
-                $narasi[] = "Berat badan anak saat ini terpantau normal.";
-            }
+            $idealBBText = $idealBBRef ? "ideal menurut standar WHO adalah sekitar **" . round($idealBBRef->M, 1) . " kg**" : "ideal belum ditemukan";
+            $narasi[] = "📊 **Pemantauan Berat Badan:**\nSaat ini berat badan anak terukur **{$currentPengukuran->berat_badan} kg**. Untuk anak seumurannya ({$usia} bulan), berat {$idealBBText}. Berdasarkan hal ini, status berat badan anak tergolong **{$currentHasil->status_bb_u}**.";
+        }
+
+        // 2. Kesimpulan Tinggi Badan
+        if ($currentHasil->haz !== null) {
+            $idealTBText = $idealTBRef ? "idealnya berada di kisaran **" . round($idealTBRef->M, 1) . " cm**" : "ideal belum ditemukan";
+            
+            // Tambahkan sedikit empati jika stunting
+            $isStunted = str_contains(strtolower($currentHasil->status_tb_u), 'pendek') || str_contains(strtolower($currentHasil->status_tb_u), 'stunted');
+            $tambahan = $isStunted ? " Kondisi ini membutuhkan perhatian khusus untuk mengejar ketertinggalan pertumbuhannya." : "";
+            
+            $narasi[] = "📏 **Pemantauan Tinggi/Panjang Badan:**\nTinggi/panjang badan anak tercatat **{$currentPengukuran->tinggi_badan} cm**, sementara {$idealTBText}. Pertumbuhan tinggi anak saat ini masuk dalam kategori **{$currentHasil->status_tb_u}**.{$tambahan}";
         }
 
         // Bandingkan dengan bulan sebelumnya
@@ -126,26 +144,22 @@ class NutritionService
             $bbDiff = $currentPengukuran->berat_badan - $previousPengukuran->berat_badan;
             $tbDiff = $currentPengukuran->tinggi_badan - $previousPengukuran->tinggi_badan;
             
-            if ($bbDiff <= 0) {
-                $narasi[] = "⚠️ Peringatan: Berat badan tidak naik atau justru turun dibandingkan kunjungan sebelumnya (Delta: " . $bbDiff . " kg). Hal ini perlu dievaluasi pola makannya.";
+            if ($bbDiff < 0) {
+                $narasi[] = "📉 **Evaluasi Tumbuh Kembang:**\nPerhatian, berat badan anak **turun " . abs(round($bbDiff, 2)) . " kg** dibandingkan bulan sebelumnya. Mohon agar asupan nutrisi dan pola makan di bulan ini dievaluasi kembali bersama tenaga kesehatan.";
+            } elseif ($bbDiff == 0) {
+                $narasi[] = "⚖️ **Evaluasi Tumbuh Kembang:**\nBerat badan anak **tidak mengalami kenaikan** dibandingkan bulan sebelumnya (stagnan). Perlu ditinjau kembali asupan kalori harian anak.";
             } else {
-                $narasi[] = "Terdapat kenaikan BB sebesar " . $bbDiff . " kg dari bulan lalu.";
-            }
-            
-            if ($currentHasil->haz !== null && $previousHasil->haz !== null) {
-                if ($currentHasil->haz < $previousHasil->haz - 0.2) {
-                    $narasi[] = "Tren pertumbuhan tinggi badan melambat dibanding grafik standar WHO.";
-                }
+                $narasi[] = "📈 **Evaluasi Tumbuh Kembang:**\nKabar baik! Terdapat tren kenaikan berat badan sebesar **" . round($bbDiff, 2) . " kg** dari pengukuran terakhir. Terus pertahankan pola asuh dan gizi seimbangnya!";
             }
         } else {
-            $narasi[] = "Ini merupakan catatan pengukuran pertama/awal di sistem.";
+            $narasi[] = "📌 *Ini adalah catatan pengukuran pertama anak di dalam sistem.*";
         }
 
         // Red flag injection
         if ($currentHasil->red_flag) {
-            $narasi[] = "🚨 Peringatan Medis: " . $currentHasil->catatan_red_flag;
+            $narasi[] = "\n🚨 PERINGATAN MEDIS: " . $currentHasil->catatan_red_flag;
         }
 
-        return implode(' ', $narasi);
+        return implode("\n\n", $narasi);
     }
 }

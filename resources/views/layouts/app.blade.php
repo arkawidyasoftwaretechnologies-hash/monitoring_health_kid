@@ -48,10 +48,82 @@
                         <span style="font-size: 1.2rem;">📊</span> Dashboard
                     </a>
                 </li>
-                <li>
-                    <a href="{{ route('anak.index') }}" style="display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; border-radius: 0.5rem; text-decoration: none; color: {{ request()->routeIs('anak.*') ? 'var(--primary)' : 'var(--text-main)' }}; background: {{ request()->routeIs('anak.*') ? 'rgba(79, 70, 229, 0.1)' : 'transparent' }}; font-weight: {{ request()->routeIs('anak.*') ? '700' : '500' }}; transition: all 0.2s;">
-                        <span style="font-size: 1.2rem;">👶</span> Data Anak
-                    </a>
+                <li x-data="{ open: {{ (request()->routeIs('anak.*') || request()->routeIs('pengukuran.*')) ? 'true' : 'false' }} }">
+                    <div style="display: flex; flex-direction: column;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; border-radius: 0.5rem; background: {{ (request()->routeIs('anak.*') || request()->routeIs('pengukuran.*')) ? 'rgba(79, 70, 229, 0.1)' : 'transparent' }}; transition: all 0.2s;">
+                            <a href="{{ route('anak.index') }}" style="flex: 1; display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; text-decoration: none; color: {{ (request()->routeIs('anak.*') || request()->routeIs('pengukuran.*')) ? 'var(--primary)' : 'var(--text-main)' }}; font-weight: {{ (request()->routeIs('anak.*') || request()->routeIs('pengukuran.*')) ? '700' : '500' }};">
+                                <span style="font-size: 1.2rem;">👶</span> Data Anak
+                            </a>
+                            <button @click.prevent="open = !open" style="background: transparent; border: none; padding: 0.8rem; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center;">
+                                <svg x-show="!open" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                <svg x-show="open" style="display: none;" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                            </button>
+                        </div>
+                        
+                        <ul x-show="open" style="display: none; list-style: none; padding-left: 2.8rem; margin-top: 0.5rem; flex-direction: column; gap: 0.3rem;" x-transition>
+                            <li>
+                                <a href="{{ route('anak.index') }}" style="text-decoration: none; font-size: 0.9rem; color: {{ request()->routeIs('anak.index') ? 'var(--primary)' : 'var(--text-muted)' }}; font-weight: {{ request()->routeIs('anak.index') ? '700' : '500' }}; display: block; padding: 0.4rem 0; transition: color 0.2s;">📋 Daftar Anak</a>
+                            </li>
+                            @if(!Auth::user()->isDokter())
+                            <li>
+                                <a href="{{ route('anak.create') }}" style="text-decoration: none; font-size: 0.9rem; color: {{ request()->routeIs('anak.create') ? 'var(--primary)' : 'var(--text-muted)' }}; font-weight: {{ request()->routeIs('anak.create') ? '700' : '500' }}; display: block; padding: 0.4rem 0; transition: color 0.2s;">➕ Tambah Anak Baru</a>
+                            </li>
+                            @endif
+                            
+                            @php
+                                $ctxAnak = null;
+                                $ctxPengukuran = null;
+                                if(request()->route('anak')) {
+                                    $id = is_object(request()->route('anak')) ? request()->route('anak')->id : request()->route('anak');
+                                    $ctxAnak = \App\Models\Anak::find($id);
+                                } elseif(request()->route('pengukuran')) {
+                                    $pId = is_object(request()->route('pengukuran')) ? request()->route('pengukuran')->id : request()->route('pengukuran');
+                                    $p = \App\Models\Pengukuran::find($pId);
+                                    $ctxPengukuran = $p;
+                                    $ctxAnak = $p ? $p->anak : null;
+                                }
+                                
+                                if ($ctxAnak && !$ctxPengukuran) {
+                                    $ctxPengukuran = $ctxAnak->pengukurans()->latest('tanggal_ukur')->first();
+                                }
+                            @endphp
+                            
+                            @if($ctxAnak)
+                                <li style="margin-top: 0.5rem; border-top: 1px dashed var(--border); padding-top: 0.5rem;">
+                                    <span style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em;">Aksi Khusus:</span>
+                                    <div style="font-size: 0.75rem; color: var(--text-main); font-weight: 600; margin-bottom: 0.3rem; margin-top: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $ctxAnak->nama }}</div>
+                                </li>
+                                @if(!Auth::user()->isDokter())
+                                <li>
+                                    <a href="{{ route('anak.edit', $ctxAnak->id) }}" style="text-decoration: none; font-size: 0.9rem; color: {{ request()->routeIs('anak.edit') ? 'var(--primary)' : 'var(--text-muted)' }}; font-weight: {{ request()->routeIs('anak.edit') ? '700' : '500' }}; display: block; padding: 0.4rem 0; transition: color 0.2s;">✏️ Edit Profil</a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('pengukuran.create', $ctxAnak->id) }}" style="text-decoration: none; font-size: 0.9rem; color: {{ request()->routeIs('pengukuran.create') && !request()->route('pengukuran') ? 'var(--primary)' : 'var(--text-muted)' }}; font-weight: {{ request()->routeIs('pengukuran.create') && !request()->route('pengukuran') ? '700' : '500' }}; display: block; padding: 0.4rem 0; transition: color 0.2s;">📏 Ukur Baru</a>
+                                </li>
+                                @endif
+                                <li>
+                                    <a href="{{ route('pengukuran.chart', $ctxAnak->id) }}" style="text-decoration: none; font-size: 0.9rem; color: {{ request()->routeIs('pengukuran.chart') ? 'var(--primary)' : 'var(--text-muted)' }}; font-weight: {{ request()->routeIs('pengukuran.chart') ? '700' : '500' }}; display: block; padding: 0.4rem 0; transition: color 0.2s;">📈 Grafik Tumbuh</a>
+                                </li>
+                                
+                                @if($ctxPengukuran)
+                                <li>
+                                    <a href="{{ route('pengukuran.edit', $ctxPengukuran->id) }}" style="text-decoration: none; font-size: 0.9rem; color: {{ request()->routeIs('pengukuran.edit') ? 'var(--primary)' : 'var(--text-muted)' }}; font-weight: {{ request()->routeIs('pengukuran.edit') ? '700' : '500' }}; display: block; padding: 0.4rem 0; transition: color 0.2s;">
+                                        {{ Auth::user()->isDokter() ? '🩺 Analisis Medis' : '✍️ Edit Ukur' }}
+                                    </a>
+                                </li>
+                                
+                                    @if($ctxPengukuran->assessmentPlan)
+                                    <li>
+                                        <a href="{{ route('cetak.medis', $ctxPengukuran->id) }}" target="_blank" style="text-decoration: none; font-size: 0.9rem; color: var(--text-muted); font-weight: 500; display: block; padding: 0.4rem 0; transition: color 0.2s;">🖨️ Cetak Medis</a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('cetak.orangtua', $ctxPengukuran->id) }}" target="_blank" style="text-decoration: none; font-size: 0.9rem; color: var(--text-muted); font-weight: 500; display: block; padding: 0.4rem 0; transition: color 0.2s;">🖨️ Cetak Ortu</a>
+                                    </li>
+                                    @endif
+                                @endif
+                            @endif
+                        </ul>
+                    </div>
                 </li>
                 <li>
                     <a href="{{ route('laporan.index') }}" style="display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; border-radius: 0.5rem; text-decoration: none; color: {{ request()->routeIs('laporan.*') ? 'var(--primary)' : 'var(--text-main)' }}; background: {{ request()->routeIs('laporan.*') ? 'rgba(79, 70, 229, 0.1)' : 'transparent' }}; font-weight: {{ request()->routeIs('laporan.*') ? '700' : '500' }}; transition: all 0.2s;">
