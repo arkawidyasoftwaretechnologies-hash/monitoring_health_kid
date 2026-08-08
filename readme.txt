@@ -1,9 +1,9 @@
 ====================================================================
-PANDUAN DEPLOYMENT & SETTING DOCKER DI VPS - MONITORING STUNTING
+PANDUAN DEPLOYMENT & SETTING DOCKER DI VPS - MONITORING HEALTH KID
 ====================================================================
 
 Dokumen ini berisi langkah-langkah untuk melakukan instalasi dan setup
-aplikasi Monitoring Stunting (Laravel) menggunakan Docker di dalam 
+aplikasi Monitoring Health Kid (Laravel) menggunakan Docker di dalam 
 lingkungan produksi (VPS).
 
 --------------------------------------------------------------------
@@ -20,8 +20,8 @@ $ sudo systemctl start docker
 2. CLONE & KONFIGURASI ENV
 --------------------------------------------------------------------
 - Clone repository ke VPS Anda:
-  $ git clone <url_repo_anda> monitoring-stunting
-  $ cd monitoring-stunting
+  $ git clone https://github.com/arkawidyasoftwaretechnologies-hash/monitoring_health_kid.git
+  $ cd monitoring_health_kid
 
 - Salin file environment:
   $ cp .env.example .env
@@ -64,12 +64,24 @@ Jalankan seeder berikut agar kalkulator Z-Score berfungsi dengan akurat:
 $ docker-compose exec app php artisan db:seed --class=FullWhoReferenceSeeder
 $ docker-compose exec app php artisan db:seed --class=WhoWhzReferenceSeeder
 
-Langkah D: Import Data Dummy & User (Untuk Testing/Demo)
+Langkah D: Import Engine Rekomendasi Klinis (WAJIB)
+Jalankan seeder ini untuk mengaktifkan draft otomatis assessment dokter:
+$ docker-compose exec app php artisan db:seed --class=TemplateRekomendasiSeeder
+
+Langkah E: Import Data Dummy & User (Untuk Testing/Demo)
 Jalankan seeder ini untuk memunculkan riwayat grafik dan 10 anak sample:
 $ docker-compose exec app php artisan db:seed --class=DummyDataSeeder
 
 --------------------------------------------------------------------
-5. OPTIMASI & PERMISSION (PRODUCTION)
+5. UPDATE DATA / KALIBRASI (JIKA ADA PERUBAHAN TABEL WHO)
+--------------------------------------------------------------------
+Jika di masa depan Anda melakukan pembaruan pada tabel referensi WHO
+atau mengubah aturan peringatan (Red Flag), Anda WAJIB menjalankan
+skrip kalibrasi agar seluruh riwayat histori pasien lama disesuaikan:
+$ docker-compose exec app php artisan app:recalculate-zscore
+
+--------------------------------------------------------------------
+6. OPTIMASI & PERMISSION (PRODUCTION)
 --------------------------------------------------------------------
 Jalankan optimasi cache agar performa aplikasi maksimal di VPS:
 $ docker-compose exec app php artisan config:cache
@@ -82,7 +94,7 @@ $ docker-compose exec app chmod -R 777 storage bootstrap/cache
 --------------------------------------------------------------------
 SELESAI!
 --------------------------------------------------------------------
-Aplikasi Monitoring Stunting Anda sekarang sudah berjalan di VPS.
+Aplikasi Monitoring Health Kid Anda sekarang sudah berjalan di VPS.
 Silakan akses IP Publik VPS Anda melalui browser:
 http://<IP_VPS_ANDA>:8000 (Atau sesuaikan dengan port di docker-compose)
 
