@@ -33,7 +33,7 @@ class Index extends Component
     {
         $allAnaks = Anak::with(['puskesmas', 'pengukurans' => function($q) {
             $q->latest('tanggal_ukur');
-        }, 'pengukurans.hasilStatusGizi'])->orderBy('created_at', 'desc')->get();
+        }, 'pengukurans.hasilStatusGizi', 'pengukurans.assessmentPlan'])->orderBy('created_at', 'desc')->get();
 
         // Compute Stats
         $stats = [

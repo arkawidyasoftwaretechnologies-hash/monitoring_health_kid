@@ -9,6 +9,7 @@ use App\Models\HasilStatusGizi;
 use App\Services\GrowthCalculationService;
 use App\Services\ZScoreService;
 use App\Services\NutritionService;
+use App\Models\TemplateRekomendasi;
 use Carbon\Carbon;
 
 class Form extends Component
@@ -22,6 +23,9 @@ class Form extends Component
     public $lila;
     
     public $hasil = null; // Store result to show immediately
+    public $show_assessment_form = false;
+    public $draft_assessment = '';
+    public $draft_plan = '';
 
     public $pengukuran_id;
 
@@ -52,6 +56,20 @@ class Form extends Component
             $this->lila = $pengukuran->lila;
             $this->alat_ukur_bb = $pengukuran->alat_ukur_bb ?? 'Timbangan Digital';
             $this->alat_ukur_tb = $pengukuran->alat_ukur_tb ?? 'Microtoise';
+            
+            $this->hasil = $pengukuran->hasilStatusGizi;
+            
+            if ($pengukuran->assessmentPlan) {
+                $this->draft_assessment = $pengukuran->assessmentPlan->assessment_final;
+                $this->draft_plan = $pengukuran->assessmentPlan->plan_final;
+                $this->show_assessment_form = true;
+            } elseif ($this->hasil) {
+                // Generate draft if assessment doesn't exist yet (e.g. inputted by operator who cannot save assessment)
+                $draft = app(\App\Services\AssessmentDraftService::class)->generate($pengukuran);
+                $this->draft_assessment = $draft['assessment'];
+                $this->draft_plan = $draft['plan'];
+                $this->show_assessment_form = true;
+            }
         } else {
             $this->anak = $anak;
             $this->tanggal_ukur = date('Y-m-d');
@@ -158,13 +176,54 @@ class Form extends Component
         // Generate narrative after creating the new record, passing the current record to generateNarrative
         $narasi = $nutritionService->generateNarrative($this->hasil, $previousHasil, $pengukuran, $previousPengukuran);
         $this->hasil->update(['narasi_interpretasi' => $narasi]);
+        
+        $this->pengukuran_id = $pengukuran->id;
+
+        // Generate Assessment Draft
+        $draft = app(\App\Services\AssessmentDraftService::class)->generate($pengukuran);
+        $this->draft_assessment = $draft['assessment'];
+        $this->draft_plan = $draft['plan'];
+        $this->show_assessment_form = true;
 
         // Show success logic or reset
-        session()->flash('message', 'Data pengukuran berhasil disimpan dan dikalkulasi.');
+        if (auth()->user()->isOperator()) {
+            session()->flash('message', 'Data pengukuran berhasil disimpan. Proses selesai.');
+        } else {
+            session()->flash('message', 'Data pengukuran berhasil disimpan. Silakan tinjau Assessment & Plan klinis.');
+        }
+    }
+
+    public function simpanAssessment()
+    {
+        $this->validate([
+            'draft_assessment' => 'required',
+            'draft_plan' => 'required',
+        ]);
+
+        $pengukuran = Pengukuran::findOrFail($this->pengukuran_id);
+        
+        $draftAwal = app(\App\Services\AssessmentDraftService::class)->generate($pengukuran);
+        $isModified = ($this->draft_assessment !== $draftAwal['assessment'] || $this->draft_plan !== $draftAwal['plan']);
+
+        $pengukuran->assessmentPlan()->updateOrCreate(
+            ['pengukuran_id' => $pengukuran->id],
+            [
+                'draft_otomatis' => "Assessment:\n" . $draftAwal['assessment'] . "\nPlan:\n" . $draftAwal['plan'],
+                'assessment_final' => $this->draft_assessment,
+                'plan_final' => $this->draft_plan,
+                'disetujui_oleh' => auth()->id() ?? 1,
+                'disetujui_at' => now(),
+                'dimodifikasi_dari_draft' => $isModified,
+            ]
+        );
+
+        session()->flash('message', 'Assessment & Plan berhasil disimpan ke Rekam Medis.');
+        return redirect()->route('anak.index');
     }
 
     public function render()
     {
-        return view('livewire.pengukuran.form');
+        $templates = TemplateRekomendasi::where('aktif', true)->orderBy('urutan_prioritas')->get();
+        return view('livewire.pengukuran.form', compact('templates'));
     }
 }

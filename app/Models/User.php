@@ -29,4 +29,24 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role && $this->role->name === 'admin';
+    }
+
+    public function isOperator(): bool
+    {
+        return $this->role && $this->role->name === 'operator';
+    }
+
+    public function isDokter(): bool
+    {
+        return $this->role && $this->role->name === 'dokter';
+    }
 }

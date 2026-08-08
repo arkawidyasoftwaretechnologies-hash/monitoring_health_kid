@@ -33,7 +33,7 @@ class Index extends Component
 
     public function getFilteredPengukurans()
     {
-        $query = Pengukuran::with(['anak', 'hasilStatusGizi'])
+        $query = Pengukuran::with(['anak', 'hasilStatusGizi', 'assessmentPlan'])
             ->when($this->selectedAnak, function ($query) {
                 $query->where('anak_id', $this->selectedAnak);
             })

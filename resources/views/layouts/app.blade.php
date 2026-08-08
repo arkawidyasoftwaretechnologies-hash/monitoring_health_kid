@@ -58,6 +58,17 @@
                         <span style="font-size: 1.2rem;">📄</span> Laporan
                     </a>
                 </li>
+                
+                @if(Auth::check() && (Auth::user()->isAdmin() || Auth::user()->isDokter()))
+                <li style="margin-top: 1rem;">
+                    <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; padding-left: 1rem; letter-spacing: 1px;">Kustomisasi Dokter</span>
+                </li>
+                <li>
+                    <a href="{{ route('pengaturan.template') }}" style="display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; border-radius: 0.5rem; text-decoration: none; color: {{ request()->routeIs('pengaturan.template') ? 'var(--primary)' : 'var(--text-main)' }}; background: {{ request()->routeIs('pengaturan.template') ? 'rgba(79, 70, 229, 0.1)' : 'transparent' }}; font-weight: {{ request()->routeIs('pengaturan.template') ? '700' : '500' }}; transition: all 0.2s;">
+                        <span style="font-size: 1.2rem;">⚙️</span> Template Medis
+                    </a>
+                </li>
+                @endif
             </ul>
         </nav>
 
@@ -69,6 +80,28 @@
                 <svg id="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
             </button>
         </div>
+
+        @auth
+        <!-- Profil & Logout -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1.5rem; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.8rem;">
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1rem;">
+                    {{ substr(Auth::user()->name, 0, 1) }}
+                </div>
+                <div style="display: flex; flex-direction: column; overflow: hidden;">
+                    <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ Auth::user()->name }}</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">{{ Auth::user()->role ? Auth::user()->role->name : 'Staff' }}</span>
+                </div>
+            </div>
+            <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
+                @csrf
+                <button type="submit" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.6rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    Keluar Sistem
+                </button>
+            </form>
+        </div>
+        @endauth
     </aside>
 
     <script>

@@ -22,4 +22,14 @@ class Pengukuran extends Model
     {
         return $this->hasMany(RedFlagLog::class);
     }
+
+    public function assessmentPlan()
+    {
+        return $this->hasOne(AssessmentPlan::class);
+    }
+
+    public function jadwalKontrols()
+    {
+        return $this->hasMany(JadwalKontrol::class);
+    }
 }

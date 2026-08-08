@@ -17,4 +17,9 @@ class Anak extends Model
     {
         return $this->hasMany(Pengukuran::class);
     }
+
+    public function jadwalKontrols()
+    {
+        return $this->hasMany(JadwalKontrol::class);
+    }
 }

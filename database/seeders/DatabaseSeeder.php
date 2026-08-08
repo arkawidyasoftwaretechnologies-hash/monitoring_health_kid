@@ -21,13 +21,29 @@ class DatabaseSeeder extends Seeder
             DemoSeeder::class,
         ]);
 
-        $superAdminRole = \App\Models\Role::where('name', 'super_admin')->first();
+        $adminRole = \App\Models\Role::where('name', 'admin')->first();
+        $operatorRole = \App\Models\Role::where('name', 'operator')->first();
+        $dokterRole = \App\Models\Role::where('name', 'dokter')->first();
 
         User::factory()->create([
-            'name' => 'Super Admin Dinkes',
-            'email' => 'admin@dinkes.go.id',
+            'name' => 'Administrator',
+            'email' => 'admin@klinik.com',
             'password' => bcrypt('password'),
-            'role_id' => $superAdminRole->id,
+            'role_id' => $adminRole->id,
+        ]);
+
+        User::factory()->create([
+            'name' => 'Bidan Siti',
+            'email' => 'bidan@klinik.com',
+            'password' => bcrypt('password'),
+            'role_id' => $operatorRole->id,
+        ]);
+
+        User::factory()->create([
+            'name' => 'Dr. Andi Sp.A',
+            'email' => 'dokter@klinik.com',
+            'password' => bcrypt('password'),
+            'role_id' => $dokterRole->id,
         ]);
     }
 }

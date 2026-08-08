@@ -492,7 +492,7 @@
                                 </th>
                                 <th style="padding: 0.6rem 0.5rem; color: var(--text-muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; background: transparent;">Usia</th>
                                 
-                                @foreach(['BB', 'TB', 'LK', 'LiLA', 'IMT/U (BMIZ)', 'WAZ', 'HAZ', 'Red Flag'] as $h)
+                                @foreach(['BB', 'TB', 'LK', 'LiLA', 'IMT/U (BMIZ)', 'WAZ', 'HAZ', 'Red Flag', 'Aksi'] as $h)
                                     <th style="padding: 0.6rem 0.5rem; color: #1abc9c; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; border-left: {{ $h === 'BB' ? '2px solid rgba(26,188,156,0.3)' : 'none' }}; text-align: center; background: transparent;">{{ $h }}</th>
                                 @endforeach
                             </tr>
@@ -574,6 +574,14 @@
                                         <span style="padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; background: rgba(231,76,60,0.15); color: #e74c3c; font-weight: bold;">⚠ Ya</span>
                                     @else
                                         <span style="color: var(--text-muted); font-size: 0.8rem;">Tidak</span>
+                                    @endif
+                                </td>
+                                
+                                <td style="padding: 0.6rem 0.5rem; text-align: center; white-space: nowrap;">
+                                    <a href="{{ route('pengukuran.edit', $row->id) }}" title="Edit Pengukuran & Rekomendasi" style="text-decoration: none; font-size: 1.1rem; margin-right: 5px;">✍️</a>
+                                    @if($row->assessmentPlan)
+                                        <a href="{{ route('cetak.medis', $row->id) }}" target="_blank" title="Cetak Laporan Medis" style="text-decoration: none; font-size: 1.1rem; margin-right: 5px;">🩺</a>
+                                        <a href="{{ route('cetak.orangtua', $row->id) }}" target="_blank" title="Cetak Lembar Ortu" style="text-decoration: none; font-size: 1.1rem;">👨‍👩‍👧</a>
                                     @endif
                                 </td>
                             </tr>

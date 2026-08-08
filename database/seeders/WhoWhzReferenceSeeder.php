@@ -12,49 +12,59 @@ class WhoWhzReferenceSeeder extends Seeder
     {
         DB::table('who_whz_references')->truncate();
         
-        $data = [];
         $now = Carbon::now();
+        $basePath = base_path('database/data/who_whz');
         
-        foreach (['L', 'P'] as $jk) {
-            foreach (['panjang', 'tinggi'] as $tipe) {
-                // WHO usually measures 'panjang' up to 110cm, and 'tinggi' starting from 65cm. 
-                // We'll just generate the full range 45 to 120 for both for demo purposes, 
-                // but shift the M slightly for standing (-0.7cm equivalent impact).
-                
-                for ($ht = 45.0; $ht <= 120.0; $ht += 0.5) {
-                    $ht_m = $ht / 100;
-                    $bmi = 17.5 - ($ht_m * 2); 
-                    $M = $bmi * $ht_m * $ht_m;
-                    
-                    if ($jk === 'L') {
-                        $M *= 1.02;
+        $files = [
+            ['path' => "$basePath/wfl_boys.csv", 'jk' => 'L', 'tipe' => 'panjang'],
+            ['path' => "$basePath/wfl_girls.csv", 'jk' => 'P', 'tipe' => 'panjang'],
+            ['path' => "$basePath/wfh_boys.csv", 'jk' => 'L', 'tipe' => 'tinggi'],
+            ['path' => "$basePath/wfh_girls.csv", 'jk' => 'P', 'tipe' => 'tinggi'],
+        ];
+
+        foreach ($files as $fileMeta) {
+            $path = $fileMeta['path'];
+            $jk = $fileMeta['jk'];
+            $tipe = $fileMeta['tipe'];
+
+            if (!file_exists($path)) {
+                $this->command->warn("File not found: $path");
+                continue;
+            }
+
+            $data = [];
+            $header = true;
+            if (($handle = fopen($path, "r")) !== FALSE) {
+                while (($row = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                    if ($header) {
+                        $header = false;
+                        continue;
                     }
                     
-                    if ($tipe === 'tinggi') {
-                        $M *= 0.99; // Slightly lighter for same numerical height standing
-                    }
-                    
-                    $data[] = [
-                        'jenis_kelamin' => $jk,
-                        'panjang_tinggi' => $ht,
-                        'tipe_ukur' => $tipe,
-                        'L' => 1.0000,
-                        'M' => round($M, 4),
-                        'S' => 0.0800,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ];
-                    
-                    if (count($data) >= 500) {
-                        DB::table('who_whz_references')->insert($data);
-                        $data = [];
+                    if (count($row) >= 4) {
+                        $data[] = [
+                            'jenis_kelamin' => $jk,
+                            'panjang_tinggi' => (float)$row[0],
+                            'tipe_ukur' => $tipe,
+                            'L' => (float)$row[1],
+                            'M' => (float)$row[2],
+                            'S' => (float)$row[3],
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+
+                        if (count($data) >= 500) {
+                            DB::table('who_whz_references')->insert($data);
+                            $data = [];
+                        }
                     }
                 }
+                fclose($handle);
+                
+                if (count($data) > 0) {
+                    DB::table('who_whz_references')->insert($data);
+                }
             }
-        }
-        
-        if (count($data) > 0) {
-            DB::table('who_whz_references')->insert($data);
         }
     }
 }

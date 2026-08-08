@@ -98,6 +98,7 @@ class DemoSeeder extends Seeder
                 $waz = $zScoreService->getZScore('waz', $anak->jenis_kelamin, $usiaBulan, $beratBadan);
                 $haz = $zScoreService->getZScore('haz', $anak->jenis_kelamin, $usiaBulan, $tinggiBadan);
                 $bmiz = $zScoreService->getZScore('bmiz', $anak->jenis_kelamin, $usiaBulan, $imt);
+                $whz = $zScoreService->getZScore('whz', $anak->jenis_kelamin, $usiaBulan, $beratBadan, $tinggiBadan);
                 $hcfa = $zScoreService->getZScore('hcfa', $anak->jenis_kelamin, $usiaBulan, $lingkarKepala);
 
                 // Status Gizi
@@ -106,8 +107,8 @@ class DemoSeeder extends Seeder
                 $status_imtu = $bmiz !== null ? $nutritionService->determineStatusIMTU($bmiz) : null;
                 
                 $redFlags = [];
-                if ($waz !== null && $haz !== null && $bmiz !== null) {
-                    $redFlags = $nutritionService->checkRedFlag($waz, $haz, $bmiz, $hcfa, $lila);
+                if ($waz !== null && $haz !== null && $whz !== null) {
+                    $redFlags = $nutritionService->checkRedFlag($waz, $haz, $whz, $hcfa, $lila, $usiaBulan);
                 }
 
                 HasilStatusGizi::create([
@@ -115,6 +116,7 @@ class DemoSeeder extends Seeder
                     'waz' => $waz,
                     'haz' => $haz,
                     'bmiz' => $bmiz,
+                    'whz' => $whz,
                     'hcfa' => $hcfa,
                     'status_bb_u' => $status_bbu,
                     'status_tb_u' => $status_tbu,

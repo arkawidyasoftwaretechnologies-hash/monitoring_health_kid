@@ -64,7 +64,7 @@
                         <th colspan="4" style="padding: 0.5rem 0.5rem 0.3rem; color: #3498db; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; background: transparent;">
                             📋 Identitas Anak
                         </th>
-                        <th colspan="11" style="padding: 0.5rem 0.5rem 0.3rem; color: #1abc9c; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; border-left: 2px solid rgba(26,188,156,0.3); background: transparent;">
+                        <th colspan="13" style="padding: 0.5rem 0.5rem 0.3rem; color: #1abc9c; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; border-left: 2px solid rgba(26,188,156,0.3); background: transparent;">
                             📏 Pengukuran Terakhir (WHO Z-Score)
                         </th>
                         <th style="padding: 0.5rem 0.5rem 0.3rem; color: var(--text-muted); font-size: 0.68rem; background: transparent;"></th>
@@ -75,8 +75,8 @@
                             <th style="padding: 0.6rem 0.5rem; color: var(--text-muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; background: transparent;">{{ $h }}</th>
                         @endforeach
                         
-                        @foreach(['Usia (Bln)', 'BB (kg)', 'TB (cm)', 'LK (cm)', 'LiLA (cm)', 'HAZ', 'WAZ', 'WHZ', 'Status Gizi', 'IMT/U & BB/U', 'TB/U & LK/U'] as $h)
-                            <th style="padding: 0.6rem 0.5rem; color: #1abc9c; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; border-left: {{ $h === 'Usia (Bln)' ? '2px solid rgba(26,188,156,0.3)' : 'none' }}; text-align: center; background: transparent;">{{ $h }}</th>
+                        @foreach(['Usia (Bln)', 'BB (kg)', 'TB (cm)', 'LK (cm)', 'LiLA', 'WAZ (BB/U)', 'HAZ (TB/U)', 'WHZ (BB/TB)', 'BMIZ (IMT/U)', 'HCFA (LK/U)', 'Status Pertumbuhan (TB)', 'Status Gizi Tambahan'] as $h)
+                            <th style="padding: 0.6rem 0.5rem; color: #1abc9c; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; border-left: {{ $h === 'Usia (Bln)' ? '2px solid rgba(26,188,156,0.3)' : 'none' }}; text-align: center; background: transparent;">{{ $h }}</th>
                         @endforeach
                         
                         <th style="padding: 0.6rem 0.5rem; color: var(--text-muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; background: transparent;">Aksi</th>
@@ -137,7 +137,7 @@
                             <td style="padding: 0.6rem 0.5rem; text-align: center; color: var(--text-secondary);">{{ $latest->lingkar_kepala ?? '—' }}</td>
                             <td style="padding: 0.6rem 0.5rem; text-align: center; color: var(--text-secondary);">{{ $latest->lila ?? '—' }}</td>
                             
-                            @foreach([$hasil->haz ?? null, $hasil->waz ?? null, $hasil->bmiz ?? null] as $z)
+                            @foreach([$hasil->waz ?? null, $hasil->haz ?? null, $hasil->whz ?? null, $hasil->bmiz ?? null, $hasil->hcfa ?? null] as $z)
                                 @php $zc = getZColor($z); @endphp
                                 <td style="padding: 0.6rem 0.5rem; text-align: center;">
                                     <span style="padding: 1px 5px; border-radius: 4px; font-weight: 700; font-family: monospace; font-size: 0.75rem; background: {{ $zc['bg'] }}; color: {{ $zc['color'] }};">
@@ -148,12 +148,12 @@
                             
                             <td style="padding: 0.6rem 0.5rem;">
                                 @if($hasil)
-                                    <span style="padding: 2px 7px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; background: {{ getStatusStyle($hasil->status_tb_u)['bg'] }}; color: {{ getStatusStyle($hasil->status_tb_u)['color'] }}; white-space: nowrap;">
+                                    <span style="padding: 2px 7px; border-radius: 20px; font-size: 0.65rem; font-weight: 700; background: {{ getStatusStyle($hasil->status_tb_u)['bg'] }}; color: {{ getStatusStyle($hasil->status_tb_u)['color'] }}; white-space: nowrap;">
                                         {{ $hasil->status_tb_u ?? 'Belum Kalkulasi' }}
                                         @if($hasil->red_flag) ⚠ @endif
                                     </span>
                                 @else
-                                    <span style="padding: 2px 7px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; background: rgba(149,165,166,0.2); color: #95a5a6; white-space: nowrap;">
+                                    <span style="padding: 2px 7px; border-radius: 20px; font-size: 0.65rem; font-weight: 700; background: rgba(149,165,166,0.2); color: #95a5a6; white-space: nowrap;">
                                         Belum Diukur
                                     </span>
                                 @endif
@@ -161,20 +161,19 @@
                             
                             <td style="padding: 0.6rem 0.5rem;">
                                 @if($hasil)
-                                    <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                                        <span style="font-size: 0.65rem; color: var(--text-secondary);">IMT/U: <strong style="color: {{ getStatusStyle($hasil->status_imt_u)['color'] }}">{{ $hasil->status_imt_u ?? '—' }}</strong></span>
-                                        <span style="font-size: 0.65rem; color: var(--text-secondary);">BB/U: <strong style="color: {{ getStatusStyle($hasil->status_bb_u)['color'] }}">{{ $hasil->status_bb_u ?? '—' }}</strong></span>
-                                    </div>
-                                @else
-                                    <span style="color: var(--text-muted);">—</span>
-                                @endif
-                            </td>
-                            
-                            <td style="padding: 0.6rem 0.5rem;">
-                                @if($hasil)
-                                    <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                                        <span style="font-size: 0.65rem; color: var(--text-secondary);">TB/U: <strong style="color: {{ getStatusStyle($hasil->status_tb_u)['color'] }}">{{ $hasil->status_tb_u ?? '—' }}</strong></span>
-                                        <span style="font-size: 0.65rem; color: var(--text-secondary);">LK/U: <strong style="color: {{ getStatusStyle($hasil->status_lk_u)['color'] }}">{{ $hasil->status_lk_u ?? '—' }}</strong></span>
+                                    <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                        <div style="font-size: 0.62rem; line-height: 1.1; color: var(--text-secondary); display: flex; justify-content: space-between; gap: 0.5rem;">
+                                            <span>BB/TB:</span>
+                                            <strong style="color: {{ getStatusStyle($hasil->status_bb_tb)['color'] }}; text-align: right;">{{ $hasil->status_bb_tb ?? '—' }}</strong>
+                                        </div>
+                                        <div style="font-size: 0.62rem; line-height: 1.1; color: var(--text-secondary); display: flex; justify-content: space-between; gap: 0.5rem;">
+                                            <span>BB/U:</span>
+                                            <strong style="color: {{ getStatusStyle($hasil->status_bb_u)['color'] }}; text-align: right;">{{ $hasil->status_bb_u ?? '—' }}</strong>
+                                        </div>
+                                        <div style="font-size: 0.62rem; line-height: 1.1; color: var(--text-secondary); display: flex; justify-content: space-between; gap: 0.5rem;">
+                                            <span>LK/U:</span>
+                                            <strong style="color: {{ getStatusStyle($hasil->status_lk_u)['color'] }}; text-align: right;">{{ $hasil->status_lk_u ?? '—' }}</strong>
+                                        </div>
                                     </div>
                                 @else
                                     <span style="color: var(--text-muted);">—</span>
@@ -183,9 +182,20 @@
                             
                             <td style="padding: 0.6rem 0.5rem;">
                                 <div style="display: flex; gap: 0.3rem;">
-                                    <a href="{{ route('anak.edit', $anak->id) }}" title="Edit" style="padding: 4px 8px; background: rgba(52,152,219,0.15); border: 1px solid #3498db; color: #3498db; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none;">✏️</a>
-                                    <a href="{{ route('pengukuran.create', $anak->id) }}" style="padding: 4px 8px; background: rgba(39,174,96,0.2); border: 1px solid #2ecc71; color: #2ecc71; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none;">+ Ukur</a>
-                                    <a href="{{ route('pengukuran.chart', $anak->id) }}" style="padding: 4px 8px; background: rgba(155,89,182,0.2); border: 1px solid #9b59b6; color: #9b59b6; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none; white-space: nowrap;">📄 Laporan</a>
+                                    <a href="{{ route('anak.edit', $anak->id) }}" title="Edit Profil Anak" style="padding: 4px 8px; background: rgba(52,152,219,0.15); border: 1px solid #3498db; color: #3498db; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none;">✏️ Profil</a>
+                                    
+                                    @if($latest)
+                                        <a href="{{ route('pengukuran.edit', $latest->id) }}" title="{{ Auth::user()->isDokter() ? 'Isi Analisis Medis & Tindak Lanjut' : 'Edit Pengukuran & Rekomendasi Terakhir' }}" style="padding: 4px 8px; background: rgba(243,156,18,0.15); border: 1px solid #f39c12; color: #f39c12; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none;">{{ Auth::user()->isDokter() ? '🩺 Analisis Medis' : '✍️ Edit Ukur' }}</a>
+                                    @endif
+                                    
+                                    <a href="{{ route('pengukuran.create', $anak->id) }}" title="Tambah Pengukuran Baru" style="padding: 4px 8px; background: rgba(39,174,96,0.2); border: 1px solid #2ecc71; color: #2ecc71; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none; white-space: nowrap;">+ Ukur Baru</a>
+                                    <a href="{{ route('pengukuran.chart', $anak->id) }}" style="padding: 4px 8px; background: rgba(155,89,182,0.2); border: 1px solid #9b59b6; color: #9b59b6; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none; white-space: nowrap;">📄 Grafik</a>
+                                    
+                                    @if($latest && $latest->assessmentPlan)
+                                        <a href="{{ route('cetak.medis', $latest->id) }}" target="_blank" title="Cetak Laporan Medis" style="padding: 4px 8px; background: rgba(52,73,94,0.15); border: 1px solid #34495e; color: #34495e; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none;">🩺</a>
+                                        <a href="{{ route('cetak.orangtua', $latest->id) }}" target="_blank" title="Cetak Lembar Ortu" style="padding: 4px 8px; background: rgba(22,160,133,0.15); border: 1px solid #16a085; color: #16a085; border-radius: 5px; cursor: pointer; font-size: 0.72rem; text-decoration: none;">👨‍👩‍👧</a>
+                                    @endif
+
                                     <button wire:click="deleteAnak({{ $anak->id }})" wire:confirm="Yakin ingin menghapus data anak ini beserta seluruh riwayat pengukurannya?" style="padding: 4px 8px; background: rgba(231,76,60,0.15); border: 1px solid #e74c3c; color: #e74c3c; border-radius: 5px; cursor: pointer; font-size: 0.72rem;" title="Hapus">🗑</button>
                                 </div>
                             </td>
