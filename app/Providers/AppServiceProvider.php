@@ -19,7 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (request()->header('x-forwarded-proto') == 'https' || request()->server('HTTP_X_FORWARDED_PROTO') == 'https') {
+        // Paksa penggunaan HTTPS jika menggunakan reverse proxy (sesuai setting VPS)
+        if (config('app.env') !== 'local') {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
     }
