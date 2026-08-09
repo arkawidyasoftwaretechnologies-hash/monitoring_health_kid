@@ -261,16 +261,55 @@ class NutritionService
             $saran = "Pertahankan asupan gizi seimbang harian dan rutinitas aktivitas fisik.";
         }
 
+        // Hitung Usia Ekivalen
+        $warningAgeEquivalent = "";
+        if ($waz !== null && $haz !== null) {
+            $jk = $currentPengukuran->anak->jenis_kelamin ?? 'L';
+            $bbAktualVal = $currentPengukuran->berat_badan;
+            $tbAktualVal = $currentPengukuran->tinggi_badan;
+            
+            // Cari Weight Age (Usia BB saat ini menyentuh Z=0)
+            $weightAgeRef = \App\Models\WhoGrowthReference::where('indeks', 'waz')
+                ->where('jenis_kelamin', $jk)
+                ->orderByRaw("ABS(M - ?)", [$bbAktualVal])
+                ->first();
+                
+            // Cari Height Age (Usia TB saat ini menyentuh Z=0)
+            $heightAgeRef = \App\Models\WhoGrowthReference::where('indeks', 'haz')
+                ->where('jenis_kelamin', $jk)
+                ->orderByRaw("ABS(M - ?)", [$tbAktualVal])
+                ->first();
+                
+            if ($weightAgeRef && $heightAgeRef) {
+                $wa = $weightAgeRef->usia_bulan;
+                $ha = $heightAgeRef->usia_bulan;
+                
+                if ($waz < $haz) {
+                    $judul = "⚠️ **Evaluasi Usia Ekivalen (Defisit Berat Badan):**";
+                    $catatan = "*(Ketertinggalan berat badan lebih signifikan dibandingkan tinggi badannya)*";
+                } elseif ($waz > $haz) {
+                    $judul = "⚠️ **Evaluasi Usia Ekivalen (Risiko Proporsi / Perawakan Pendek):**";
+                    $catatan = "*(Pertambahan berat badan lebih cepat dibandingkan tinggi badannya)*";
+                } else {
+                    $judul = "ℹ️ **Evaluasi Usia Ekivalen (Pertumbuhan Proporsional):**";
+                    $catatan = "*(Perkembangan berat dan tinggi badan berjalan secara proporsional)*";
+                }
+                
+                $warningAgeEquivalent = "\n\n> {$judul}\n> Berat badan anak saat ini (**{$bbAktualVal} kg**) setara dengan median normal anak usia **{$wa} bulan**.\n> Sementara tinggi badannya (**{$tbAktualVal} cm**) setara dengan median normal anak usia **{$ha} bulan**.\n> Padahal, usia aktual anak saat ini adalah **{$usia} bulan**.\n> {$catatan}";
+            }
+        }
+
         return "{$teksKondisi}\n\n"
              . "- **Standar Referensi Gizi (Berdasarkan Usia {$usia} Bulan):**\n"
              . "  • RDA Kalori: **{$rdaKaloriPerKg} Kkal / kg BB**\n"
              . "  • Kebutuhan Protein: **{$rdaProteinPerKg} gram / kg BB**\n\n"
              . "- **Target Energi (Kalori):**\n"
-             . "  *Rumus: Standar RDA Kalori × BB Acuan*\n"
+             . "  *Rumus RDA Gizi Ideal (Patokan WHO) = Standar RDA Kalori × BB Acuan*\n"
              . "  Hasil: {$rumusKalori} = **{$targetKalori} Kkal/hari**\n\n"
              . "- **Target Protein:**\n"
-             . "  *Rumus: Standar Kebutuhan Protein × BB Acuan*\n"
+             . "  *Rumus Standar Kebutuhan Protein = Standar Protein × BB Acuan*\n"
              . "  Hasil: {$rumusProtein} = **{$targetProtein} gram/hari**\n\n"
-             . "*(Rekomendasi Klinis: {$saran})*";
+             . "*(Rekomendasi Klinis: {$saran})*"
+             . $warningAgeEquivalent;
     }
 }

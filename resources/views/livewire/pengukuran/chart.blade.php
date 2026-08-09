@@ -62,14 +62,48 @@
         $latestHasil = $anak->pengukurans->last()?->hasilStatusGizi;
     @endphp
 
-    @if($latestHasil && $latestHasil->narasi_interpretasi)
-        <div class="alert-info animate-fade-in" style="margin-bottom: 2rem;">
-            <h3 class="alert-info-title">
-                💡 Kesimpulan & Evaluasi Klinis Terkini
-            </h3>
-            <p class="alert-info-text">{!! str_replace("\n", '<br>', e($latestHasil->narasi_interpretasi)) !!}</p>
-        </div>
-    @endif
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        @if($latestHasil && $latestHasil->narasi_interpretasi)
+            <div class="alert-info animate-fade-in">
+                <h3 class="alert-info-title" style="font-size: 0.95rem; margin-bottom: 0.5rem;">
+                    💡 Kesimpulan & Evaluasi Klinis Terkini
+                </h3>
+                <div class="alert-info-text" style="font-size: 0.85rem; line-height: 1.6;">
+                    {!! \Illuminate\Support\Str::markdown($latestHasil->narasi_interpretasi) !!}
+                </div>
+            </div>
+        @endif
+
+        @php
+            $rdaText = null;
+            if ($latestHasil && $latestHasil->pengukuran) {
+                $rdaText = app(\App\Services\NutritionService::class)->generateRDAText($latestHasil, $latestHasil->pengukuran);
+            }
+        @endphp
+        
+        @if($rdaText)
+            <div class="alert-success animate-fade-in" style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 1rem; border-radius: 0 0.5rem 0.5rem 0;">
+                <h3 style="color: #10b981; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.95rem;">
+                    🍽️ Rekomendasi Gizi Terkini (RDA)
+                </h3>
+                <div class="alert-info-text" style="font-size: 0.85rem; line-height: 1.6; color: var(--text-main);">
+                    {!! \Illuminate\Support\Str::markdown($rdaText) !!}
+                </div>
+            </div>
+        @endif
+        
+        @if($latestHasil && $latestHasil->red_flag)
+            <div class="alert-danger animate-fade-in" style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid var(--danger); padding: 1rem; border-radius: 0 0.5rem 0.5rem 0;">
+                <h3 style="color: var(--danger); display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.95rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    Peringatan Medis (Red Flag)
+                </h3>
+                <p class="alert-info-text" style="font-size: 0.85rem; line-height: 1.6; color: var(--danger);">
+                    {{ $latestHasil->catatan_red_flag }}
+                </p>
+            </div>
+        @endif
+    </div>
 
     @if(count($labels) > 0)
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
@@ -424,6 +458,53 @@
                             </td>
                             
                             <td style="padding: 0.6rem 0.5rem; text-align: center; white-space: nowrap;">
+                                <!-- Native Dialog Modal -->
+                                <button onclick="document.getElementById('modal-{{ $row->id }}').showModal()" title="Lihat Rekomendasi Gizi & Klinis" style="color: #10b981; background: rgba(16,185,129,0.15); border: 1px solid #10b981; border-radius: 5px; cursor: pointer; padding: 4px 8px; margin-right: 0.5rem; font-size: 0.72rem; font-weight: 600;">💡 Hasil</button>
+                                
+                                <dialog id="modal-{{ $row->id }}" style="padding: 2rem; max-width: 700px; width: 90%; max-height: 85vh; border-radius: 12px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); background: var(--surface);">
+                                    <div style="position: relative; text-align: left;">
+                                        <button onclick="document.getElementById('modal-{{ $row->id }}').close()" style="position: absolute; right: -1rem; top: -1rem; background: rgba(239,68,68,0.1); border: none; font-size: 1.2rem; cursor: pointer; color: #ef4444; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)';" onmouseout="this.style.background='rgba(239,68,68,0.1)';">✕</button>
+                                        
+                                        <h2 style="font-size: 1.3rem; color: var(--text-main); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(52,152,219,0.2); padding-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem; margin-top: 0;">
+                                            <span>💡</span> Hasil Rekomendasi Tumbuh Kembang
+                                        </h2>
+                                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Pengukuran Tanggal: <strong>{{ $row->tanggal_ukur }}</strong> (Usia: {{ $row->usia_bulan }} bulan)</p>
+                                        
+                                        <div style="font-size: 0.9rem; line-height: 1.6; white-space: normal;">
+                                            @if($hasil)
+                                                @if($hasil->red_flag)
+                                                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(239,68,68,0.1); border-left: 4px solid #ef4444; border-radius: 0 4px 4px 0;">
+                                                        <strong style="color: #ef4444; display: block; margin-bottom: 0.5rem;">🚨 Peringatan Medis (Red Flag)</strong>
+                                                        <span style="color: #ef4444;">{{ $hasil->catatan_red_flag }}</span>
+                                                    </div>
+                                                @endif
+                                                
+                                                @if($hasil->narasi_interpretasi)
+                                                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(52,152,219,0.08); border-left: 4px solid #3498db; border-radius: 0 4px 4px 0; color: var(--text-main);">
+                                                        <strong style="color: #3498db; display: block; margin-bottom: 0.5rem;">🩺 Evaluasi Klinis Z-Score</strong>
+                                                        {!! \Illuminate\Support\Str::markdown($hasil->narasi_interpretasi) !!}
+                                                    </div>
+                                                @endif
+                                                
+                                                @php
+                                                    $rdaRowText = app(\App\Services\NutritionService::class)->generateRDAText($hasil, $row);
+                                                @endphp
+                                                
+                                                @if($rdaRowText)
+                                                    <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(16,185,129,0.08); border-left: 4px solid #10b981; border-radius: 0 4px 4px 0; color: var(--text-main);">
+                                                        <strong style="color: #10b981; display: block; margin-bottom: 0.5rem;">🍽️ Rekomendasi Gizi (RDA)</strong>
+                                                        {!! \Illuminate\Support\Str::markdown($rdaRowText) !!}
+                                                    </div>
+                                                @endif
+                                            @else
+                                                <div style="padding: 2rem; text-align: center; color: var(--text-muted); background: rgba(255,255,255,0.02); border-radius: 8px;">
+                                                    <span style="font-size: 2rem; display: block; margin-bottom: 0.5rem; opacity: 0.5;">❓</span>
+                                                    Belum ada hasil kalkulasi untuk pengukuran ini.
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </dialog>
                                 <a href="{{ route('pengukuran.edit', $row->id) }}" title="Edit" style="color: #3498db; margin-right: 0.5rem; text-decoration: none;">✏️</a>
                                 <button type="button" wire:click="deletePengukuran({{ $row->id }})" wire:confirm="Yakin ingin menghapus data pengukuran ini?" title="Hapus" style="color: #e74c3c; background: none; border: none; cursor: pointer; padding: 0;">🗑️</button>
                             </td>
