@@ -28,21 +28,21 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name' => 'Administrator',
             'email' => 'admin@klinik.com',
-            'password' => bcrypt('password'),
+            'password' => bcrypt('rahasia123'),
             'role_id' => $adminRole->id,
         ]);
 
         User::factory()->create([
             'name' => 'Bidan Siti',
             'email' => 'bidan@klinik.com',
-            'password' => bcrypt('password'),
+            'password' => bcrypt('rahasia123'),
             'role_id' => $operatorRole->id,
         ]);
 
         User::factory()->create([
             'name' => 'Dr. Andi Sp.A',
             'email' => 'dokter@klinik.com',
-            'password' => bcrypt('password'),
+            'password' => bcrypt('rahasia123'),
             'role_id' => $dokterRole->id,
         ]);
     }

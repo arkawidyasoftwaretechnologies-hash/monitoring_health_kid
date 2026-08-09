@@ -138,6 +138,16 @@ class Form extends Component
             
         $previousHasil = $previousPengukuran ? $previousPengukuran->hasilStatusGizi : null;
 
+        // Calculate RDA values for permanent storage
+        $rdaValues = $nutritionService->calculateRDAValues(
+            $usiaBulan, 
+            $this->anak->jenis_kelamin, 
+            $waz, 
+            $haz, 
+            $whz, 
+            (float)$this->berat_badan
+        );
+
         $this->hasil = HasilStatusGizi::create([
             'pengukuran_id' => $pengukuran->id,
             'waz' => $waz,
@@ -153,6 +163,8 @@ class Form extends Component
             'status_lila' => $nutritionService->determineStatusLiLA($this->lila ? (float)$this->lila : null, $usiaBulan),
             'red_flag' => false, // Will update below
             'catatan_red_flag' => null,
+            'bb_ideal' => $rdaValues['bb_ideal'],
+            'kkal_kebutuhan' => $rdaValues['kkal_kebutuhan'],
         ]);
 
         // Evaluate Red Flags

@@ -37,7 +37,7 @@
             <div style="margin-top: 1rem; text-align: center; font-size: 0.8rem; color: #94a3b8;">
                 Akun Demo:<br>
                 admin@klinik.com | bidan@klinik.com | dokter@klinik.com<br>
-                (password: password)
+                (password: rahasia123)
             </div>
         </form>
     </div>

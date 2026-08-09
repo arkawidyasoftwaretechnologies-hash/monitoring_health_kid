@@ -155,11 +155,122 @@ class NutritionService
             $narasi[] = "📌 *Ini adalah catatan pengukuran pertama anak di dalam sistem.*";
         }
 
+        // Rincian Perhitungan Matematis Z-Score
+        $rincian = [];
+        $rincian[] = "🧮 **Rincian Perhitungan Z-Score (Standar WHO):**";
+        
+        if ($currentHasil->waz !== null && $idealBBRef) {
+            $L = round($idealBBRef->L, 4);
+            $M = round($idealBBRef->M, 4);
+            $S = round($idealBBRef->S, 4);
+            $X = $currentPengukuran->berat_badan;
+            if ($L == 0) {
+                $hitung = "ln({$X} / {$M}) / {$S}";
+            } else {
+                $hitung = "((({$X} / {$M}) ^ {$L}) - 1) / ({$L} × {$S})";
+            }
+            $rincian[] = "- **Berat Badan (WAZ):**\n  Z = {$hitung} = **{$currentHasil->waz}**";
+        }
+
+        if ($currentHasil->haz !== null && $idealTBRef) {
+            $L = round($idealTBRef->L, 4);
+            $M = round($idealTBRef->M, 4);
+            $S = round($idealTBRef->S, 4);
+            $X = $currentPengukuran->tinggi_badan;
+            if ($L == 0) {
+                $hitung = "ln({$X} / {$M}) / {$S}";
+            } else {
+                $hitung = "((({$X} / {$M}) ^ {$L}) - 1) / ({$L} × {$S})";
+            }
+            $rincian[] = "- **Tinggi Badan (HAZ):**\n  Z = {$hitung} = **{$currentHasil->haz}**";
+        }
+
         // Red flag injection
         if ($currentHasil->red_flag) {
             $narasi[] = "\n🚨 PERINGATAN MEDIS: " . $currentHasil->catatan_red_flag;
         }
 
         return implode("\n\n", $narasi);
+    }
+
+    public function calculateRDAValues(int $usiaBulan, string $jk, ?float $waz, ?float $haz, ?float $whz, float $bbAktual): array
+    {
+        $idealBBRef = \App\Models\WhoGrowthReference::where('indeks', 'waz')
+                        ->where('jenis_kelamin', $jk)->where('usia_bulan', $usiaBulan)->first();
+        
+        $bbIdeal = $idealBBRef ? round($idealBBRef->M, 2) : $bbAktual;
+        $rdaKaloriPerKg = $usiaBulan < 12 ? 110 : ($usiaBulan < 36 ? 100 : 90);
+        
+        // Logika Target Kalori berdasarkan status gizi
+        if (($waz !== null && $waz < -2) || ($haz !== null && $haz < -2) || ($whz !== null && $whz < -2)) {
+            // Kurang Gizi / Stunting -> Kejar Tumbuh (Gunakan BB Ideal)
+            $targetKalori = round($rdaKaloriPerKg * $bbIdeal);
+        } elseif (($waz !== null && $waz > 2) || ($whz !== null && $whz > 2)) {
+            // Gizi Lebih / Obesitas -> Weight Management (Gunakan BB Ideal agar tidak overfeeding)
+            $targetKalori = round($rdaKaloriPerKg * $bbIdeal);
+        } else {
+            // Gizi Normal -> Maintenance (Gunakan BB Aktual)
+            $targetKalori = round($rdaKaloriPerKg * $bbAktual);
+        }
+
+        return [
+            'bb_ideal' => $bbIdeal,
+            'kkal_kebutuhan' => $targetKalori,
+        ];
+    }
+
+    /**
+     * Generate rekomendasi gizi RDA secara terpisah untuk semua kondisi gizi.
+     */
+    public function generateRDAText($currentHasil, $currentPengukuran): ?string
+    {
+        if (!$currentHasil || !$currentPengukuran || !$currentHasil->kkal_kebutuhan) return null;
+
+        $usia = $currentPengukuran->usia_bulan ?? 0;
+        $bbAktual = $currentPengukuran->berat_badan;
+        $bbIdeal = $currentHasil->bb_ideal;
+        $targetKalori = $currentHasil->kkal_kebutuhan;
+        
+        $rdaKaloriPerKg = $usia < 12 ? 110 : ($usia < 36 ? 100 : 90);
+        $rdaProteinPerKg = $usia < 12 ? 2.0 : ($usia < 36 ? 1.5 : 1.2);
+
+        $waz = $currentHasil->waz;
+        $haz = $currentHasil->haz;
+        $whz = $currentHasil->z_whz ?? $currentHasil->whz;
+
+        $isKurang = (($waz !== null && $waz < -2) || ($haz !== null && $haz < -2) || ($whz !== null && $whz < -2));
+        $isLebih = (($waz !== null && $waz > 2) || ($whz !== null && $whz > 2));
+
+        if ($isKurang) {
+            $targetProtein = round($rdaProteinPerKg * $bbIdeal, 1);
+            $teksKondisi = "Karena indikator gizi anak kurang, perhitungan target kalori menggunakan **Berat Badan Ideal ({$bbIdeal} kg)** (Median WHO), bukan berat aktual untuk mengejar ketertinggalan pertumbuhan.";
+            $rumusKalori = "{$rdaKaloriPerKg} Kkal/kg × {$bbIdeal} kg (BB Ideal)";
+            $rumusProtein = "{$rdaProteinPerKg} g/kg × {$bbIdeal} kg (BB Ideal)";
+            $saran = "Tingkatkan asupan kalori padat gizi secara bertahap dan gunakan protein hewani ganda.";
+        } elseif ($isLebih) {
+            $targetProtein = round($rdaProteinPerKg * $bbIdeal, 1);
+            $teksKondisi = "Karena indikator gizi anak lebih (overweight), perhitungan target kalori dibatasi menggunakan **Berat Badan Ideal ({$bbIdeal} kg)** agar tidak terjadi kelebihan asupan kalori lebih lanjut.";
+            $rumusKalori = "{$rdaKaloriPerKg} Kkal/kg × {$bbIdeal} kg (BB Ideal)";
+            $rumusProtein = "{$rdaProteinPerKg} g/kg × {$bbIdeal} kg (BB Ideal)";
+            $saran = "Fokus pada pengurangan makanan manis/lemak jenuh, perbanyak serat, dan aktivitas fisik.";
+        } else {
+            $targetProtein = round($rdaProteinPerKg * $bbAktual, 1);
+            $teksKondisi = "Status gizi anak tergolong normal. Kebutuhan kalori dihitung berdasarkan **Berat Badan Aktual saat ini ({$bbAktual} kg)** untuk pemeliharaan (*maintenance*).";
+            $rumusKalori = "{$rdaKaloriPerKg} Kkal/kg × {$bbAktual} kg (BB Aktual)";
+            $rumusProtein = "{$rdaProteinPerKg} g/kg × {$bbAktual} kg (BB Aktual)";
+            $saran = "Pertahankan asupan gizi seimbang harian dan rutinitas aktivitas fisik.";
+        }
+
+        return "{$teksKondisi}\n\n"
+             . "- **Standar Referensi Gizi (Berdasarkan Usia {$usia} Bulan):**\n"
+             . "  • RDA Kalori: **{$rdaKaloriPerKg} Kkal / kg BB**\n"
+             . "  • Kebutuhan Protein: **{$rdaProteinPerKg} gram / kg BB**\n\n"
+             . "- **Target Energi (Kalori):**\n"
+             . "  *Rumus: Standar RDA Kalori × BB Acuan*\n"
+             . "  Hasil: {$rumusKalori} = **{$targetKalori} Kkal/hari**\n\n"
+             . "- **Target Protein:**\n"
+             . "  *Rumus: Standar Kebutuhan Protein × BB Acuan*\n"
+             . "  Hasil: {$rumusProtein} = **{$targetProtein} gram/hari**\n\n"
+             . "*(Rekomendasi Klinis: {$saran})*";
     }
 }

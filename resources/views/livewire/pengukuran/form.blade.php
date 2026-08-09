@@ -188,7 +188,23 @@
                     <h4 class="alert-info-title">
                         💡 Kesimpulan Sistem
                     </h4>
-                    <p class="alert-info-text">{!! str_replace("\n", '<br>', e($hasil->narasi_interpretasi)) !!}</p>
+                    <div class="alert-info-text" style="font-size: 0.85rem; line-height: 1.6;">
+                        {!! \Illuminate\Support\Str::markdown($hasil->narasi_interpretasi ?? '') !!}
+                    </div>
+                </div>
+            @endif
+
+            @php
+                $rdaText = app(\App\Services\NutritionService::class)->generateRDAText($hasil, $hasil->pengukuran);
+            @endphp
+            @if($rdaText)
+                <div class="alert-success" style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 1rem; border-radius: 0 0.5rem 0.5rem 0;">
+                    <h4 style="color: #10b981; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                        🍽️ Rekomendasi Gizi (RDA)
+                    </h4>
+                    <div class="alert-info-text" style="font-size: 0.85rem; line-height: 1.6; color: var(--text-main);">
+                        {!! \Illuminate\Support\Str::markdown($rdaText) !!}
+                    </div>
                 </div>
             @endif
 
