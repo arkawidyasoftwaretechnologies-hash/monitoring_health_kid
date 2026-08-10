@@ -6,6 +6,15 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AnakController;
 use App\Http\Controllers\Api\PengukuranController;
 
+// Endpoint Health Check untuk menguji koneksi (bisa diakses via browser)
+Route::get('/', function () {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Pediatric WHO Clinical Monitoring API is up and running!',
+        'version' => '1.0'
+    ]);
+});
+
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
