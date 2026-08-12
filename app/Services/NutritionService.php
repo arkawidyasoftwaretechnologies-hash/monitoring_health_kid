@@ -237,6 +237,7 @@ class NutritionService
         $waz = $currentHasil->waz;
         $haz = $currentHasil->haz;
         $whz = $currentHasil->z_whz ?? $currentHasil->whz;
+        $bmiz = $currentHasil->bmiz;
 
         $isKurang = (($waz !== null && $waz < -2) || ($haz !== null && $haz < -2) || ($whz !== null && $whz < -2));
         $isLebih = (($waz !== null && $waz > 2) || ($whz !== null && $whz > 2));
@@ -263,16 +264,41 @@ class NutritionService
 
         // Hitung Usia Ekivalen
         $warningAgeEquivalent = "";
-        if ($waz !== null && $haz !== null) {
+        if (($waz !== null || $bmiz !== null) && $haz !== null) {
             $jk = $currentPengukuran->anak->jenis_kelamin ?? 'L';
             $bbAktualVal = $currentPengukuran->berat_badan;
             $tbAktualVal = $currentPengukuran->tinggi_badan;
             
-            // Cari Weight Age (Usia BB saat ini menyentuh Z=0)
-            $weightAgeRef = \App\Models\WhoGrowthReference::where('indeks', 'waz')
-                ->where('jenis_kelamin', $jk)
-                ->orderByRaw("ABS(M - ?)", [$bbAktualVal])
-                ->first();
+            // Cari Weight Age
+            $wa = null;
+            if ($waz !== null) {
+                // Cari Weight Age (Usia BB saat ini menyentuh Z=0) dari tabel waz
+                $weightAgeRef = \App\Models\WhoGrowthReference::where('indeks', 'waz')
+                    ->where('jenis_kelamin', $jk)
+                    ->orderByRaw("ABS(M - ?)", [$bbAktualVal])
+                    ->first();
+                $wa = $weightAgeRef ? $weightAgeRef->usia_bulan : null;
+            } else {
+                // Estimasi Weight Age dari Median BMIZ dan HAZ untuk anak > 5 tahun
+                $refs = \App\Models\WhoGrowthReference::whereIn('indeks', ['haz', 'bmiz'])
+                    ->where('jenis_kelamin', $jk)
+                    ->get()
+                    ->groupBy('usia_bulan');
+                    
+                $minDiff = 9999;
+                foreach($refs as $month => $data) {
+                    $hRef = $data->where('indeks', 'haz')->first();
+                    $bRef = $data->where('indeks', 'bmiz')->first();
+                    if($hRef && $bRef) {
+                        $medianBB = $bRef->M * pow($hRef->M / 100, 2);
+                        $diff = abs($medianBB - $bbAktualVal);
+                        if($diff < $minDiff) {
+                            $minDiff = $diff;
+                            $wa = $month;
+                        }
+                    }
+                }
+            }
                 
             // Cari Height Age (Usia TB saat ini menyentuh Z=0)
             $heightAgeRef = \App\Models\WhoGrowthReference::where('indeks', 'haz')
@@ -280,14 +306,14 @@ class NutritionService
                 ->orderByRaw("ABS(M - ?)", [$tbAktualVal])
                 ->first();
                 
-            if ($weightAgeRef && $heightAgeRef) {
-                $wa = $weightAgeRef->usia_bulan;
+            if ($wa !== null && $heightAgeRef) {
                 $ha = $heightAgeRef->usia_bulan;
                 
-                if ($waz < $haz) {
+                // Evaluasi defisit menggunakan perbandingan Usia Ekivalen (Weight Age vs Height Age)
+                if ($wa < $ha) {
                     $judul = "⚠️ **Evaluasi Usia Ekivalen (Defisit Berat Badan):**";
                     $catatan = "*(Ketertinggalan berat badan lebih signifikan dibandingkan tinggi badannya)*";
-                } elseif ($waz > $haz) {
+                } elseif ($wa > $ha) {
                     $judul = "⚠️ **Evaluasi Usia Ekivalen (Risiko Proporsi / Perawakan Pendek):**";
                     $catatan = "*(Pertambahan berat badan lebih cepat dibandingkan tinggi badannya)*";
                 } else {
