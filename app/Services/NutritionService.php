@@ -311,17 +311,32 @@ class NutritionService
                 
                 // Evaluasi defisit menggunakan perbandingan Usia Ekivalen (Weight Age vs Height Age)
                 if ($wa < $ha) {
-                    $judul = "⚠️ **Evaluasi Usia Ekivalen (Defisit Berat Badan):**";
-                    $catatan = "*(Ketertinggalan berat badan lebih signifikan dibandingkan tinggi badannya)*";
+                    $judul = "⚠️ **Evaluasi Usia Ekivalen (Defisit Berat Badan / Indikasi Wasting):**";
+                    $catatan = "*(Ketertinggalan berat badan lebih signifikan dibandingkan tinggi badannya. Prioritas utama adalah kejar target Berat Badan segera)*";
                 } elseif ($wa > $ha) {
-                    $judul = "⚠️ **Evaluasi Usia Ekivalen (Risiko Proporsi / Perawakan Pendek):**";
-                    $catatan = "*(Pertambahan berat badan lebih cepat dibandingkan tinggi badannya)*";
+                    $judul = "⚠️ **Evaluasi Usia Ekivalen (Risiko Perawakan Pendek / Indikasi Stunting):**";
+                    $catatan = "*(Tinggi/panjang badan tertinggal lebih jauh dibandingkan berat badannya. Waspada risiko gizi lebih/obesitas jika kalori ditingkatkan tanpa diimbangi pertumbuhan tinggi)*";
                 } else {
                     $judul = "ℹ️ **Evaluasi Usia Ekivalen (Pertumbuhan Proporsional):**";
-                    $catatan = "*(Perkembangan berat dan tinggi badan berjalan secara proporsional)*";
+                    if ($wa < $usia) {
+                        $catatan = "*(Anak berukuran proporsional, namun secara keseluruhan setara dengan anak yang lebih muda. Perlu evaluasi nutrisi dan stimulasi menyeluruh)*";
+                    } else {
+                        $catatan = "*(Perkembangan berat dan tinggi badan berjalan secara proporsional sesuai usia)*";
+                    }
                 }
                 
                 $warningAgeEquivalent = "\n\n> {$judul}\n> Berat badan anak saat ini (**{$bbAktualVal} kg**) setara dengan median normal anak usia **{$wa} bulan**.\n> Sementara tinggi badannya (**{$tbAktualVal} cm**) setara dengan median normal anak usia **{$ha} bulan**.\n> Padahal, usia aktual anak saat ini adalah **{$usia} bulan**.\n> {$catatan}";
+                
+                // Tindakan Khusus berdasarkan defisit
+                if ($ha < $usia) {
+                    $selisihTB = $usia - $ha;
+                    $warningAgeEquivalent .= "\n\n> 📏 **Tindakan untuk Tinggi/Panjang Badan (Tertinggal {$selisihTB} bulan):** Pastikan kecukupan **protein hewani ganda** & kalsium, **pola tidur teratur** (hormon pertumbuhan HGH bekerja maksimal saat tidur nyenyak di malam hari), dan stimulasi **aktivitas fisik** (merangkak/berjalan/bermain) untuk merangsang tulang.";
+                }
+                
+                if ($wa < $usia && $wa < $ha) {
+                    $selisihBB = $usia - $wa;
+                    $warningAgeEquivalent .= "\n\n> ⚖️ **Tindakan untuk Berat Badan (Tertinggal {$selisihBB} bulan):** Berikan **Makanan Padat Kalori** (tambahkan ekstra lemak seperti mentega/minyak zaitun/santan), jaga jadwal makan (*feeding rules*), dan segera **rujuk ke dokter** untuk skrining infeksi tersembunyi (TBC/ISK) yang sering membocorkan kalori.";
+                }
             }
         }
 
