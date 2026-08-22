@@ -75,6 +75,9 @@ class CdcGrowthReferenceSeeder extends Seeder
                     $m = (float) $row[$idxM];
                     $s = (float) $row[$idxS];
 
+                    // Abaikan baris kosong atau tidak valid (M=0 atau S=0 akan memicu DivisionByZeroError)
+                    if ($m == 0 || $s == 0) continue;
+
                     // Agar proses lebih cepat, kita gunakan insert bulk atau insert ignore
                     // Jika ada konflik usia (misal bulan 24 dari file inf dan file 2-20yrs), kita timpa.
                     \App\Models\CdcGrowthReference::updateOrCreate(
