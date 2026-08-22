@@ -1,9 +1,15 @@
-<div class="glass-panel animate-fade-in" style="max-width: 700px; margin: 0 auto; padding: 2rem;">
-    <div style="border-bottom: 1px solid rgba(52,152,219,0.3); padding-bottom: 1rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
-        <div style="background: linear-gradient(135deg, #3498db, #2980b9); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem;">👶</div>
-        <h2 style="font-size: 1.5rem; color: var(--text-main); font-weight: 700;">{{ $anak_id ? 'Edit Data Anak' : 'Tambah Data Anak' }}</h2>
+<div class="animate-fade-in">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <span class="page-title-icon">👶</span> 
+                {{ $anak_id ? 'Edit Data Anak' : 'Tambah Data Anak' }}
+            </h1>
+            <p class="page-subtitle">Lengkapi formulir identitas anak di bawah ini</p>
+        </div>
     </div>
 
+    <div class="glass-panel" style="max-width: 800px; margin: 0; padding: 2rem;">
     <form wire:submit.prevent="submit">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
             

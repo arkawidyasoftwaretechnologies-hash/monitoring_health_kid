@@ -1,5 +1,15 @@
 <div>
-    <div class="dashboard-grid">
+    <div class="page-header animate-fade-in">
+        <div>
+            <h1 class="page-title">
+                <span class="page-title-icon">🏠</span> 
+                Dashboard Utama
+            </h1>
+            <p class="page-subtitle">Ringkasan data pemantauan pertumbuhan anak di posyandu</p>
+        </div>
+    </div>
+
+    <div class="dashboard-grid animate-fade-in">
         <div class="card stat-card">
             <div class="stat-icon primary">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -31,7 +41,7 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card animate-fade-in">
         <div class="card-header">
             <h2 class="card-title">Selamat Datang di Stunting Monitor</h2>
         </div>

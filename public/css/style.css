@@ -168,6 +168,37 @@ nav a:hover {
     animation: fadeIn 0.4s ease-out forwards;
 }
 
+/* Unified Page Headers */
+.page-header {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.page-title-icon {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 1.5rem;
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: 0;
+}
+
 .card-header {
     border-bottom: 1px solid var(--border);
     padding-bottom: 1rem;
@@ -487,3 +518,17 @@ tbody tr:hover {
 [data-theme="dark"] .alert-danger-title {
     color: #f87171;
 }
+
+/* Modal Styling */
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+dialog[open] {
+    animation: modalFadeIn 0.3s ease-out forwards;
+}
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translate(-50%, -45%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
+}
+

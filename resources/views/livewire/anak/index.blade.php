@@ -1,4 +1,14 @@
 <div>
+    <div class="page-header animate-fade-in">
+        <div>
+            <h1 class="page-title">
+                <span class="page-title-icon">👶</span> 
+                Data Anak & Balita
+            </h1>
+            <p class="page-subtitle">Kelola master data anak, riwayat identitas, dan status pemantauan</p>
+        </div>
+    </div>
+
     <!-- Stat Cards -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
         @php

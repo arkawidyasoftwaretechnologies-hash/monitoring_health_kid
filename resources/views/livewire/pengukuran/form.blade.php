@@ -1,22 +1,30 @@
-<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+<div class="animate-fade-in" style="display: flex; flex-direction: column; gap: 1.5rem;">
+    
+    <div class="page-header" style="align-items: center; margin-bottom: 0;">
+        <div>
+            <h1 class="page-title">
+                <span class="page-title-icon">📏</span> 
+                {{ $pengukuran_id ? 'Edit Pengukuran' : 'Input Pengukuran' }}
+            </h1>
+            <p class="page-subtitle">Subjek Pemantauan: <strong>{{ $anak->nama }}</strong></p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="{{ route('anak.index') }}" class="btn btn-outline" style="padding: 0.4rem 1rem; text-decoration: none; color: #475569; border: 1px solid #cbd5e1; border-radius: 0.5rem; background: white; font-size: 0.85rem;">Kembali</a>
+            @if(!Auth::user()->isDokter())
+            <button type="submit" form="form-pengukuran" class="btn btn-primary" style="padding: 0.4rem 1rem; font-weight: bold; background: #2563eb; border: none; border-radius: 0.5rem; color: white; cursor: pointer; font-size: 0.85rem;">
+                {{ $pengukuran_id ? '🔄 Perbarui' : '🧮 Hitung' }}
+            </button>
+            @endif
+        </div>
+    </div>
+
     <!-- Bagian Atas: Form Input Pengukuran -->
     <div class="card" style="margin-bottom: 0;">
-        <form wire:submit.prevent="submit">
-            <div class="card-header" style="padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <h2 class="card-title" style="font-size: 1.1rem; margin: 0;">
-                    <span style="background: #e0f2fe; color: #0284c7; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; margin-right: 0.5rem;">Langkah 1</span> 
-                    {{ $pengukuran_id ? 'Edit Pengukuran' : 'Input Pengukuran' }}: <strong>{{ $anak->nama }}</strong>
-                </h2>
-                
-                <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ route('anak.index') }}" class="btn btn-outline" style="padding: 0.4rem 1rem; text-decoration: none; color: #475569; border: 1px solid #cbd5e1; border-radius: 0.5rem; background: white; font-size: 0.85rem;">Kembali</a>
-                    @if(!Auth::user()->isDokter())
-                    <button type="submit" class="btn btn-primary" style="padding: 0.4rem 1rem; font-weight: bold; background: #2563eb; border: none; border-radius: 0.5rem; color: white; cursor: pointer; font-size: 0.85rem;">
-                        {{ $pengukuran_id ? '🔄 Perbarui' : '🧮 Hitung' }}
-                    </button>
-                    @endif
-                </div>
-            </div>
+        <form id="form-pengukuran" wire:submit.prevent="submit">
+            <h4 style="color: var(--text-main); font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem;">
+                <span style="background: #e0f2fe; color: #0284c7; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; text-transform: uppercase;">Langkah 1</span>
+                Input Data Antropometri
+            </h4>
             
             @if (session()->has('message'))
                 <div style="padding: 0.75rem; background: #d1fae5; color: #065f46; border-radius: 0.5rem; margin-bottom: 1rem; font-size: 0.9rem;">
@@ -29,10 +37,12 @@
                 
                 <!-- Group 1: Waktu & Identitas -->
                 <div class="form-section">
-                    <h4 class="form-section-title"><span>🗓️</span> Waktu Pengukuran</h4>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Tanggal Ukur</label>
-                        <input type="date" wire:model="tanggal_ukur" required {{ Auth::user()->isDokter() ? 'disabled' : '' }}>
+                    <h4 class="form-section-title"><span>🗓️</span> Waktu & Standar Pengukuran</h4>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                            <label>Tanggal Ukur</label>
+                            <input type="date" wire:model="tanggal_ukur" required {{ Auth::user()->isDokter() ? 'disabled' : '' }}>
+                        </div>
                     </div>
                 </div>
 
@@ -183,10 +193,60 @@
 
         <!-- Notifikasi (Interpretasi & Red Flag) berdampingan -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            @php
+                $hasil->standar = 'WHO'; // Force WHO for main result
+                $resumeWho = app(\App\Services\NutritionService::class)->getEquivalentAgeResume($hasil->pengukuran, $hasil);
+                $resumeCdc = $hasil_cdc ? app(\App\Services\NutritionService::class)->getEquivalentAgeResume($hasil->pengukuran, clone $hasil_cdc) : null;
+            @endphp
+            
+            @if($resumeWho)
+                <div class="alert-info" style="background: rgba(41, 128, 185, 0.08); border-left: 4px solid #2980b9;">
+                    <h4 class="alert-info-title" style="color: #2980b9;">
+                        📊 Kesimpulan Rumus WHO 2006
+                    </h4>
+                    <div class="alert-info-text" style="font-size: 0.85rem; line-height: 1.6;">
+                        <p style="margin: 0 0 0.5rem 0; font-weight: bold; font-size: 0.95rem;">
+                            Status: 
+                            @if($resumeWho['is_stunting'])
+                                <span style="color: #e74c3c;">Stanting / Pendek</span>
+                            @else
+                                <span style="color: #2ecc71;">Non Stanting (Normal)</span>
+                            @endif
+                        </p>
+                        <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary);">
+                            <li>Angka BB ({{ $resumeWho['bb'] }} kg) - setara dengan anak umur {{ $resumeWho['wa'] ?? '...' }} bulan</li>
+                            <li>Angka TB ({{ $resumeWho['tb'] }} cm) - setara dengan anak umur {{ $resumeWho['ha'] ?? '...' }} bulan</li>
+                        </ul>
+                    </div>
+                </div>
+            @endif
+
+            @if($resumeCdc)
+                <div class="alert-info" style="background: rgba(155, 89, 182, 0.08); border-left: 4px solid #9b59b6;">
+                    <h4 class="alert-info-title" style="color: #9b59b6;">
+                        📊 Kesimpulan Rumus CDC 2000
+                    </h4>
+                    <div class="alert-info-text" style="font-size: 0.85rem; line-height: 1.6;">
+                        <p style="margin: 0 0 0.5rem 0; font-weight: bold; font-size: 0.95rem;">
+                            Status: 
+                            @if($resumeCdc['is_stunting'])
+                                <span style="color: #e74c3c;">Short Stature / Underweight</span>
+                            @else
+                                <span style="color: #2ecc71;">Normal</span>
+                            @endif
+                        </p>
+                        <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary);">
+                            <li>Angka BB ({{ $resumeCdc['bb'] }} kg) - setara dengan anak umur {{ $resumeCdc['wa'] ?? '...' }} bulan</li>
+                            <li>Angka TB ({{ $resumeCdc['tb'] }} cm) - setara dengan anak umur {{ $resumeCdc['ha'] ?? '...' }} bulan</li>
+                        </ul>
+                    </div>
+                </div>
+            @endif
+
             @if($hasil->narasi_interpretasi)
                 <div class="alert-info">
                     <h4 class="alert-info-title">
-                        💡 Kesimpulan Sistem
+                        🩺 Evaluasi Klinis Z-Score
                     </h4>
                     <div class="alert-info-text" style="font-size: 0.85rem; line-height: 1.6;">
                         {!! \Illuminate\Support\Str::markdown($hasil->narasi_interpretasi ?? '') !!}
@@ -194,6 +254,7 @@
                 </div>
             @endif
 
+            {{-- 
             @php
                 $rdaText = app(\App\Services\NutritionService::class)->generateRDAText($hasil, $hasil->pengukuran);
             @endphp
@@ -207,6 +268,7 @@
                     </div>
                 </div>
             @endif
+            --}}
 
             @if($hasil->red_flag)
                 <div class="alert-danger">

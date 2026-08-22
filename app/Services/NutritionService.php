@@ -7,8 +7,14 @@ class NutritionService
     /**
      * Menentukan status gizi berdasarkan WAZ (BB/U)
      */
-    public function determineStatusBBU(float $waz): string
+    public function determineStatusBBU(float $waz, string $standar = 'WHO'): string
     {
+        if ($standar === 'CDC') {
+            if ($waz < -1.645) return 'Berat Badan Kurang (Underweight)';
+            return 'Berat Badan Sehat (Normal)';
+        }
+        
+        // WHO
         if ($waz < -3) return 'Sangat kurang (severely underweight)';
         if ($waz >= -3 && $waz < -2) return 'Kurang (underweight)';
         if ($waz >= -2 && $waz <= 1) return 'Berat badan normal';
@@ -18,8 +24,14 @@ class NutritionService
     /**
      * Menentukan status gizi berdasarkan HAZ (TB/U atau PB/U)
      */
-    public function determineStatusTBU(float $haz): string
+    public function determineStatusTBU(float $haz, string $standar = 'WHO'): string
     {
+        if ($standar === 'CDC') {
+            if ($haz < -1.645) return 'Pendek (Short Stature)';
+            return 'Normal';
+        }
+        
+        // WHO
         if ($haz < -3) return 'Sangat pendek (severely stunted)';
         if ($haz >= -3 && $haz < -2) return 'Pendek (stunted)';
         if ($haz >= -2 && $haz <= 3) return 'Normal';
@@ -29,8 +41,17 @@ class NutritionService
     /**
      * Menentukan status gizi berdasarkan WHZ (BB/TB)
      */
-    public function determineStatusBBTB(float $whz): string
+    public function determineStatusBBTB(float $whz, string $standar = 'WHO'): string
     {
+        if ($standar === 'CDC') {
+            // CDC jarang menggunakan WHZ untuk anak > 36 bulan, biasanya merujuk ke BMIZ
+            if ($whz >= 1.645) return 'Obesitas (Obese)';
+            if ($whz >= 1.036 && $whz < 1.645) return 'Kelebihan Berat Badan (Overweight)';
+            if ($whz < -1.645) return 'Berat Badan Kurang (Underweight)';
+            return 'Berat Badan Sehat (Normal)';
+        }
+
+        // WHO
         if ($whz < -3) return 'Gizi buruk (severely wasted)';
         if ($whz >= -3 && $whz < -2) return 'Gizi kurang (wasted)';
         if ($whz >= -2 && $whz <= 1) return 'Gizi baik (normal)';
@@ -42,8 +63,16 @@ class NutritionService
     /**
      * Menentukan status gizi berdasarkan IMT/U (BMIZ)
      */
-    public function determineStatusIMTU(float $bmiz): string
+    public function determineStatusIMTU(float $bmiz, string $standar = 'WHO'): string
     {
+        if ($standar === 'CDC') {
+            if ($bmiz >= 1.645) return 'Obesitas (Obese)';
+            if ($bmiz >= 1.036 && $bmiz < 1.645) return 'Kelebihan Berat Badan (Overweight)';
+            if ($bmiz < -1.645) return 'Berat Badan Kurang (Underweight)';
+            return 'Berat Badan Sehat (Normal)';
+        }
+
+        // WHO
         if ($bmiz < -3) return 'Gizi buruk (severely wasted)';
         if ($bmiz >= -3 && $bmiz < -2) return 'Gizi kurang (wasted)';
         if ($bmiz >= -2 && $bmiz <= 1) return 'Gizi baik (normal)';
@@ -352,5 +381,72 @@ class NutritionService
              . "  Hasil: {$rumusProtein} = **{$targetProtein} gram/hari**\n\n"
              . "*(Rekomendasi Klinis: {$saran})*"
              . $warningAgeEquivalent;
+    }
+
+    public function getEquivalentAgeResume($pengukuran, $hasil)
+    {
+        if (!$pengukuran || !$hasil) return null;
+        if ($hasil->haz === null) return null;
+
+        $jk = $pengukuran->anak->jenis_kelamin ?? 'L';
+        $bb = $pengukuran->berat_badan;
+        $tb = $pengukuran->tinggi_badan;
+        $standar = $hasil->standar ?? ($pengukuran->standar_pertumbuhan ?? 'WHO');
+
+        $modelClass = $standar === 'CDC' ? \App\Models\CdcGrowthReference::class : \App\Models\WhoGrowthReference::class;
+
+        // Cari Weight Age (wa)
+        $wa = null;
+        if ($hasil->waz !== null) {
+            $ref = $modelClass::where('indeks', 'waz')
+                ->where('jenis_kelamin', $jk)
+                ->orderByRaw("ABS(M - ?)", [$bb])
+                ->first();
+            $wa = $ref ? $ref->usia_bulan : null;
+        } else {
+            // Estimasi untuk BMIZ (biasanya WHO > 5 tahun)
+            $refs = $modelClass::whereIn('indeks', ['haz', 'bmiz'])
+                ->where('jenis_kelamin', $jk)
+                ->get()
+                ->groupBy('usia_bulan');
+                
+            $minDiff = 9999;
+            foreach($refs as $month => $data) {
+                $hRef = $data->where('indeks', 'haz')->first();
+                $bRef = $data->where('indeks', 'bmiz')->first();
+                if($hRef && $bRef) {
+                    $medianBB = $bRef->M * pow($hRef->M / 100, 2);
+                    $diff = abs($medianBB - $bb);
+                    if($diff < $minDiff) {
+                        $minDiff = $diff;
+                        $wa = $month;
+                    }
+                }
+            }
+        }
+
+        // Cari Height Age (ha)
+        $haRef = $modelClass::where('indeks', 'haz')
+            ->where('jenis_kelamin', $jk)
+            ->orderByRaw("ABS(M - ?)", [$tb])
+            ->first();
+        $ha = $haRef ? $haRef->usia_bulan : null;
+
+        // Tentukan Stunting
+        $isStunting = false;
+        if (str_contains(strtolower($hasil->status_tb_u), 'stunted') || str_contains(strtolower($hasil->status_tb_u), 'pendek')) {
+            $isStunting = true;
+        } elseif ($hasil->haz !== null && $hasil->haz < -2) {
+            $isStunting = true;
+        }
+
+        return [
+            'wa' => $wa,
+            'ha' => $ha,
+            'bb' => $bb,
+            'tb' => $tb,
+            'is_stunting' => $isStunting,
+            'standar' => $standar
+        ];
     }
 }

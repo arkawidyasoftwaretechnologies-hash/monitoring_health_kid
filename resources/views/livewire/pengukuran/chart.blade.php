@@ -39,13 +39,13 @@
     }
 </style>
 <div class="animate-fade-in">
-    <div class="glass-panel" style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-            <div style="background: linear-gradient(135deg, #9b59b6, #8e44ad); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">📈</div>
-            <div>
-                <h2 style="font-size: 1.4rem; color: var(--text-main); font-weight: 700;">Grafik Pertumbuhan</h2>
-                <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.2rem;">Riwayat & Tren Antropometri: <strong>{{ $anak->nama }}</strong></div>
-            </div>
+    <div class="page-header" style="align-items: center;">
+        <div>
+            <h1 class="page-title">
+                <span class="page-title-icon">📈</span> 
+                Grafik Pertumbuhan
+            </h1>
+            <p class="page-subtitle">Riwayat & Tren Antropometri: <strong>{{ $anak->nama }}</strong></p>
         </div>
         <div style="display: flex; gap: 0.5rem;" class="no-print">
             <button onclick="window.print()" style="padding: 8px 16px; border-radius: 8px; background: #ef4444; color: white; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
@@ -63,6 +63,7 @@
     @endphp
 
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        {{-- 
         @if($latestHasil && $latestHasil->narasi_interpretasi)
             <div class="alert-info animate-fade-in">
                 <h3 class="alert-info-title" style="font-size: 0.95rem; margin-bottom: 0.5rem;">
@@ -91,6 +92,7 @@
                 </div>
             </div>
         @endif
+        --}}
         
         @if($latestHasil && $latestHasil->red_flag)
             <div class="alert-danger animate-fade-in" style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid var(--danger); padding: 1rem; border-radius: 0 0.5rem 0.5rem 0;">
@@ -461,7 +463,7 @@
                                 <!-- Native Dialog Modal -->
                                 <button onclick="document.getElementById('modal-{{ $row->id }}').showModal()" title="Lihat Rekomendasi Gizi & Klinis" style="color: #10b981; background: rgba(16,185,129,0.15); border: 1px solid #10b981; border-radius: 5px; cursor: pointer; padding: 4px 8px; margin-right: 0.5rem; font-size: 0.72rem; font-weight: 600;">💡 Hasil</button>
                                 
-                                <dialog id="modal-{{ $row->id }}" style="padding: 2rem; max-width: 700px; width: 90%; max-height: 85vh; border-radius: 12px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); background: var(--surface);">
+                                <dialog id="modal-{{ $row->id }}" style="padding: 2rem; max-width: 700px; width: 90%; max-height: 85vh; border-radius: 12px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); background: var(--surface); position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; overflow-y: auto;">
                                     <div style="position: relative; text-align: left;">
                                         <button onclick="document.getElementById('modal-{{ $row->id }}').close()" style="position: absolute; right: -1rem; top: -1rem; background: rgba(239,68,68,0.1); border: none; font-size: 1.2rem; cursor: pointer; color: #ef4444; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)';" onmouseout="this.style.background='rgba(239,68,68,0.1)';">✕</button>
                                         
@@ -471,6 +473,68 @@
                                         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Pengukuran Tanggal: <strong>{{ $row->tanggal_ukur }}</strong> (Usia: {{ $row->usia_bulan }} bulan)</p>
                                         
                                         <div style="font-size: 0.9rem; line-height: 1.6; white-space: normal;">
+                                            @php
+                                                $zScoreService = app(\App\Services\ZScoreService::class);
+                                                $nutritionService = app(\App\Services\NutritionService::class);
+                                                
+                                                // WHO Resume
+                                                $hasil->standar = 'WHO';
+                                                $resumeWho = $nutritionService->getEquivalentAgeResume($row, $hasil);
+                                                
+                                                // CDC Resume (On-the-fly)
+                                                $imt = $row->tinggi_badan > 0 ? $row->berat_badan / pow($row->tinggi_badan / 100, 2) : 0;
+                                                $hasilCdc = (object)[
+                                                    'waz' => $zScoreService->getZScore('waz', $anak->jenis_kelamin, $row->usia_bulan, $row->berat_badan, 'CDC'),
+                                                    'haz' => $zScoreService->getZScore('haz', $anak->jenis_kelamin, $row->usia_bulan, $row->tinggi_badan, 'CDC'),
+                                                    'bmiz' => $zScoreService->getZScore('bmiz', $anak->jenis_kelamin, $row->usia_bulan, $imt, 'CDC'),
+                                                    'standar' => 'CDC'
+                                                ];
+                                                $hasilCdc->status_tb_u = $hasilCdc->haz !== null ? $nutritionService->determineStatusTBU($hasilCdc->haz, 'CDC') : null;
+                                                $resumeCdc = $nutritionService->getEquivalentAgeResume($row, $hasilCdc);
+                                            @endphp
+                                            
+                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                                                @if($resumeWho)
+                                                    <div style="padding: 1rem; background: rgba(41, 128, 185, 0.08); border-left: 4px solid #2980b9; border-radius: 0 4px 4px 0; color: var(--text-main);">
+                                                        <strong style="color: #2980b9; display: block; margin-bottom: 0.5rem; font-size: 1.05rem;">📊 WHO 2006</strong>
+                                                        <p style="margin: 0 0 0.5rem 0; font-weight: bold; font-size: 1rem;">
+                                                            Status: 
+                                                            @if($resumeWho['is_stunting'])
+                                                                <span style="color: #e74c3c;">Stanting / Pendek</span>
+                                                            @else
+                                                                <span style="color: #2ecc71;">Non Stanting</span>
+                                                            @endif
+                                                        </p>
+                                                        <div style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary);">
+                                                            <ul style="margin: 0; padding-left: 1.2rem;">
+                                                                <li>BB setara umur {{ $resumeWho['wa'] ?? '...' }} bln</li>
+                                                                <li>TB setara umur {{ $resumeWho['ha'] ?? '...' }} bln</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                @endif
+
+                                                @if($resumeCdc)
+                                                    <div style="padding: 1rem; background: rgba(155, 89, 182, 0.08); border-left: 4px solid #9b59b6; border-radius: 0 4px 4px 0; color: var(--text-main);">
+                                                        <strong style="color: #9b59b6; display: block; margin-bottom: 0.5rem; font-size: 1.05rem;">📊 CDC 2000</strong>
+                                                        <p style="margin: 0 0 0.5rem 0; font-weight: bold; font-size: 1rem;">
+                                                            Status: 
+                                                            @if($resumeCdc['is_stunting'])
+                                                                <span style="color: #e74c3c;">Short Stature / UW</span>
+                                                            @else
+                                                                <span style="color: #2ecc71;">Normal</span>
+                                                            @endif
+                                                        </p>
+                                                        <div style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary);">
+                                                            <ul style="margin: 0; padding-left: 1.2rem;">
+                                                                <li>BB setara umur {{ $resumeCdc['wa'] ?? '...' }} bln</li>
+                                                                <li>TB setara umur {{ $resumeCdc['ha'] ?? '...' }} bln</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </div>
+
                                             @if($hasil)
                                                 @if($hasil->red_flag)
                                                     <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(239,68,68,0.1); border-left: 4px solid #ef4444; border-radius: 0 4px 4px 0;">

@@ -12,6 +12,10 @@ class ZScoreService
      */
     public function calculate(float $measurement, float $L, float $M, float $S): float
     {
+        if ($M == 0 || $S == 0) {
+            return 0.0;
+        }
+
         if ($L == 0) {
             $z = log($measurement / $M) / $S;
         } else {
@@ -24,12 +28,19 @@ class ZScoreService
     /**
      * Mendapatkan Z-score spesifik untuk WAZ, HAZ, atau WHZ
      */
-    public function getZScore(string $indeks, string $jenisKelamin, int $usiaBulan, float $measurement): ?float
+    public function getZScore(string $indeks, string $jenisKelamin, int $usiaBulan, float $measurement, string $standar = 'WHO'): ?float
     {
-        $ref = WhoGrowthReference::where('indeks', $indeks)
-            ->where('jenis_kelamin', $jenisKelamin)
-            ->where('usia_bulan', $usiaBulan)
-            ->first();
+        if ($standar === 'CDC') {
+            $ref = \App\Models\CdcGrowthReference::where('indeks', $indeks)
+                ->where('jenis_kelamin', $jenisKelamin)
+                ->orderByRaw('ABS(usia_bulan - ?)', [$usiaBulan])
+                ->first();
+        } else {
+            $ref = WhoGrowthReference::where('indeks', $indeks)
+                ->where('jenis_kelamin', $jenisKelamin)
+                ->where('usia_bulan', $usiaBulan)
+                ->first();
+        }
 
         if (!$ref) {
             return null; // Tidak ada data referensi
@@ -41,8 +52,12 @@ class ZScoreService
     /**
      * Mendapatkan Z-score WHZ (BB/TB) berdasarkan tinggi badan dan cara ukur
      */
-    public function getWHZ(string $jenisKelamin, float $tinggiBadan, float $beratBadan, int $usiaBulan, string $caraUkurAktual): ?float
+    public function getWHZ(string $jenisKelamin, float $tinggiBadan, float $beratBadan, int $usiaBulan, string $caraUkurAktual, string $standar = 'WHO'): ?float
     {
+        if ($standar === 'CDC') {
+            return null; // CDC lebih merekomendasikan BMIZ untuk indikasi gizi, WHZ dikosongkan.
+        }
+
         // Aturan WHO: < 24 bulan diukur telentang (panjang). >= 24 bulan diukur berdiri (tinggi).
         $usiaHari = $usiaBulan * 30; // Estimasi hari
         $tipeUkurStandar = $usiaHari < 730 ? 'panjang' : 'tinggi';
