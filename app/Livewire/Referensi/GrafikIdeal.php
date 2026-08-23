@@ -12,7 +12,7 @@ class GrafikIdeal extends Component
 
     public function render()
     {
-        $labels = range(0, 60);
+        $labels = range(0, 228);
 
         // Fetch WHO Data
         $whoRefs = WhoGrowthReference::whereIn('indeks', ['waz', 'haz', 'hcfa'])
@@ -26,7 +26,7 @@ class GrafikIdeal extends Component
             'waz' => [],
             'haz' => [],
             'hcfa' => [],
-            'lila' => array_fill(0, 61, 12.5) // Static line for LiLA
+            'lila' => array_fill(0, 229, 12.5) // Static line for LiLA
         ];
 
         foreach (['waz', 'haz', 'hcfa'] as $indeks) {
@@ -39,7 +39,7 @@ class GrafikIdeal extends Component
         // Fetch CDC Data (hanya waz dan haz)
         $cdcRefs = CdcGrowthReference::whereIn('indeks', ['waz', 'haz'])
             ->where('jenis_kelamin', $this->jenis_kelamin)
-            ->where('usia_bulan', '<=', 60.5)
+            ->where('usia_bulan', '<=', 228.5)
             ->orderBy('usia_bulan')
             ->get()
             ->groupBy('indeks');

@@ -139,33 +139,33 @@
                 </div>
             </div>
 
-            <!-- Chart 4: Aktual BB & TB -->
-            <div class="glass-panel chart-card" style="padding: 1.5rem;">
+            <!-- Chart 4: Overlay Berat Badan -->
+            <div class="glass-panel chart-card" style="padding: 1.5rem; grid-column: 1 / -1;">
                 <h3 style="color: var(--text-main); font-size: 1.1rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(52,152,219,0.2); padding-bottom: 0.8rem;">
-                    Kurva Kecepatan Tumbuh (BB & TB Aktual)
+                    Overlay Berat Badan (Anak vs WHO/CDC)
                 </h3>
-                <div class="chart-container" style="height: 350px; position: relative;">
-                    <canvas id="chartAktual"></canvas>
+                <div class="chart-container" style="height: 400px; position: relative;">
+                    <canvas id="chartOverlayBB"></canvas>
                 </div>
             </div>
 
-            <!-- Chart 5: IMT Aktual -->
-            <div class="glass-panel chart-card" style="padding: 1.5rem;">
+            <!-- Chart 5: Overlay Tinggi Badan -->
+            <div class="glass-panel chart-card" style="padding: 1.5rem; grid-column: 1 / -1;">
                 <h3 style="color: var(--text-main); font-size: 1.1rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(52,152,219,0.2); padding-bottom: 0.8rem;">
-                    Indeks Massa Tubuh Aktual (IMT / BMI)
+                    Overlay Tinggi Badan (Anak vs WHO/CDC)
                 </h3>
-                <div class="chart-container" style="height: 350px; position: relative;">
-                    <canvas id="chartIMT"></canvas>
+                <div class="chart-container" style="height: 400px; position: relative;">
+                    <canvas id="chartOverlayTB"></canvas>
                 </div>
             </div>
 
-            <!-- Chart 6: LK Aktual -->
-            <div class="glass-panel chart-card" style="padding: 1.5rem;">
+            <!-- Chart 6: Overlay Lingkar Kepala -->
+            <div class="glass-panel chart-card" style="padding: 1.5rem; grid-column: 1 / -1;">
                 <h3 style="color: var(--text-main); font-size: 1.1rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(52,152,219,0.2); padding-bottom: 0.8rem;">
-                    Tren Lingkar Kepala Aktual (cm)
+                    Overlay Lingkar Kepala (Anak vs WHO)
                 </h3>
-                <div class="chart-container" style="height: 350px; position: relative;">
-                    <canvas id="chartLK"></canvas>
+                <div class="chart-container" style="height: 400px; position: relative;">
+                    <canvas id="chartOverlayLK"></canvas>
                 </div>
             </div>
         </div>
@@ -282,37 +282,45 @@
                 options: lilaOptions
             });
 
-            // Chart 4: Aktual BB & TB
-            initChart('chartAktual', {
+            // Chart 4: Overlay BB
+            initChart('chartOverlayBB', {
                 type: 'line',
                 data: {
-                    labels: labels,
+                    labels: labelsAxis,
                     datasets: [
-                        { label: 'Berat Badan Aktual (kg)', data: {!! json_encode($beratAktualData) !!}, borderColor: '#10B981', backgroundColor: 'transparent', borderWidth: 3, yAxisID: 'y', fill: false, tension: 0.4, pointBackgroundColor: '#10B981', pointRadius: 4 },
-                        { label: 'Tinggi Badan Aktual (cm)', data: {!! json_encode($tinggiAktualData) !!}, borderColor: '#4F46E5', backgroundColor: 'transparent', borderWidth: 3, yAxisID: 'y1', fill: false, tension: 0.4, pointBackgroundColor: '#4F46E5', pointRadius: 4 }
+                        { label: 'Anak (BB Aktual)', data: anakCoords.bb, borderColor: '#ef4444', backgroundColor: '#ef4444', borderWidth: 3, pointRadius: 6, pointHoverRadius: 8, fill: false, tension: 0.2 },
+                        { label: 'WHO Median (BB)', data: whoData.waz, borderColor: '#2980b9', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.4 },
+                        { label: 'CDC Median (BB)', data: cdcData.waz, borderColor: '#9b59b6', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.4 }
                     ]
                 },
-                options: aktualOptions
+                options: overlayOptions('Berat Badan (kg)')
             });
 
-            // Chart 5: IMT Aktual
-            initChart('chartIMT', {
+            // Chart 5: Overlay TB
+            initChart('chartOverlayTB', {
                 type: 'line',
                 data: {
-                    labels: labels,
-                    datasets: [{ label: 'IMT / BMI (kg/m²)', data: {!! json_encode($imtAktualData) !!}, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: '#f59e0b', pointRadius: 4 }]
+                    labels: labelsAxis,
+                    datasets: [
+                        { label: 'Anak (TB Aktual)', data: anakCoords.tb, borderColor: '#ef4444', backgroundColor: '#ef4444', borderWidth: 3, pointRadius: 6, pointHoverRadius: 8, fill: false, tension: 0.2 },
+                        { label: 'WHO Median (TB)', data: whoData.haz, borderColor: '#2980b9', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.4 },
+                        { label: 'CDC Median (TB)', data: cdcData.haz, borderColor: '#9b59b6', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.4 }
+                    ]
                 },
-                options: imtOptions
+                options: overlayOptions('Tinggi Badan (cm)')
             });
 
-            // Chart 6: LK Aktual
-            initChart('chartLK', {
+            // Chart 6: Overlay LK
+            initChart('chartOverlayLK', {
                 type: 'line',
                 data: {
-                    labels: labels,
-                    datasets: [{ label: 'Lingkar Kepala Terukur (cm)', data: {!! json_encode($lkAktualData) !!}, borderColor: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)', borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: '#06b6d4', pointRadius: 4 }]
+                    labels: labelsAxis,
+                    datasets: [
+                        { label: 'Anak (LK Aktual)', data: anakCoords.lk, borderColor: '#ef4444', backgroundColor: '#ef4444', borderWidth: 3, pointRadius: 6, pointHoverRadius: 8, fill: false, tension: 0.2 },
+                        { label: 'WHO Median (LK)', data: whoData.hcfa, borderColor: '#2980b9', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.4 }
+                    ]
                 },
-                options: lkOptions
+                options: overlayOptions('Lingkar Kepala (cm)')
             });
         }
 

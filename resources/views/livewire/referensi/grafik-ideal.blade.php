@@ -1,7 +1,7 @@
 <div>
     <div class="page-header" style="margin-bottom: 2rem;">
         <h1 style="font-size: 1.8rem; color: var(--text-main); margin-bottom: 0.5rem; font-weight: 700;">
-            📈 Grafik Standar Ideal (0 - 60 Bulan)
+            📈 Grafik Standar Ideal (0 - 228 Bulan / 19 Tahun)
         </h1>
         <p style="color: var(--text-muted); font-size: 0.95rem;">
             Kurva Median (P50) dari referensi pertumbuhan WHO 2006 (BB, TB, LK, LiLA) dan CDC 2000 (BB, TB).
@@ -31,7 +31,7 @@
         <h2 style="font-size: 1.4rem; color: #2980b9; margin-bottom: 1rem; border-bottom: 2px solid rgba(41, 128, 185, 0.2); padding-bottom: 0.5rem;">
             📊 Standar WHO 2006
         </h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 3rem;">
             <!-- WHO WAZ -->
             <div class="glass-panel chart-card" style="padding: 1.5rem;">
                 <h3 style="color: var(--text-main); font-size: 1.05rem; margin-bottom: 1rem;">Berat Badan (BB/U)</h3>
@@ -66,7 +66,7 @@
         <h2 style="font-size: 1.4rem; color: #9b59b6; margin-bottom: 1rem; border-bottom: 2px solid rgba(155, 89, 182, 0.2); padding-bottom: 0.5rem;">
             📊 Standar CDC 2000
         </h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
             <!-- CDC WAZ -->
             <div class="glass-panel chart-card" style="padding: 1.5rem;">
                 <h3 style="color: var(--text-main); font-size: 1.05rem; margin-bottom: 1rem;">Berat Badan (BB/U)</h3>
