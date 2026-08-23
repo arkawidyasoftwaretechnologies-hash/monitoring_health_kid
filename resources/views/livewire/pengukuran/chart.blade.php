@@ -282,6 +282,22 @@
                 options: lilaOptions
             });
 
+            // Overlay Options
+            const overlayOptions = (yLabel) => ({
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: commonOptions.plugins,
+                scales: {
+                    x: { type: 'linear', title: { display: true, text: 'Usia (Bulan)', color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },
+                    y: { title: { display: true, text: yLabel, color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }
+                }
+            });
+
+            const labelsAxis = {!! json_encode($labelsAxis) !!};
+            const whoData = {!! json_encode($whoData) !!};
+            const cdcData = {!! json_encode($cdcData) !!};
+            const anakCoords = {!! json_encode($anakCoords) !!};
+
             // Chart 4: Overlay BB
             initChart('chartOverlayBB', {
                 type: 'line',
