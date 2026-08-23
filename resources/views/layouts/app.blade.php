@@ -130,7 +130,11 @@
                         <span style="font-size: 1.2rem;">📄</span> Laporan
                     </a>
                 </li>
-                
+                <li>
+                    <a href="{{ route('referensi.grafik') }}" style="display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; border-radius: 0.5rem; text-decoration: none; color: {{ request()->routeIs('referensi.*') ? 'var(--primary)' : 'var(--text-main)' }}; background: {{ request()->routeIs('referensi.*') ? 'rgba(79, 70, 229, 0.1)' : 'transparent' }}; font-weight: {{ request()->routeIs('referensi.*') ? '700' : '500' }}; transition: all 0.2s;">
+                        <span style="font-size: 1.2rem;">📈</span> Grafik Ideal
+                    </a>
+                </li>
                 @if(Auth::check() && (Auth::user()->isAdmin() || Auth::user()->isDokter()))
                 <li style="margin-top: 1rem;">
                     <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; padding-left: 1rem; letter-spacing: 1px;">Kustomisasi Dokter</span>

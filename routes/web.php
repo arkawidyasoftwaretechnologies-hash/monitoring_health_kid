@@ -12,6 +12,7 @@ use App\Http\Controllers\CetakController;
 
 use App\Livewire\Auth\Login;
 use App\Livewire\Pengaturan\TemplateRekomendasiIndex;
+use App\Livewire\Referensi\GrafikIdeal;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -37,6 +38,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/anak/{anak}/grafik', PengukuranChart::class)->name('pengukuran.chart');
     Route::get('/laporan', LaporanIndex::class)->name('laporan.index');
     Route::get('/pengaturan/template', TemplateRekomendasiIndex::class)->name('pengaturan.template');
+    Route::get('/referensi/grafik', GrafikIdeal::class)->name('referensi.grafik');
 
     Route::get('/pengukuran/{id}/cetak/orangtua', [CetakController::class, 'versiOrangTua'])->name('cetak.orangtua');
     Route::get('/pengukuran/{id}/cetak/medis', [CetakController::class, 'versiMedis'])->name('cetak.medis');
