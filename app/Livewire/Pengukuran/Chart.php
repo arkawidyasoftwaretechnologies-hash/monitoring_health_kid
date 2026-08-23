@@ -78,7 +78,11 @@ class Chart extends Component
         foreach (['waz', 'haz', 'hcfa'] as $indeks) {
             $dataByIndex = isset($whoRefs[$indeks]) ? $whoRefs[$indeks]->keyBy('usia_bulan') : collect();
             foreach ($labelsAxis as $bulan) {
-                $whoData[$indeks][] = isset($dataByIndex[$bulan]) ? (float) $dataByIndex[$bulan]->M : null;
+                if (isset($dataByIndex[$bulan])) {
+                    $whoData[$indeks][] = ['x' => $bulan, 'y' => (float) $dataByIndex[$bulan]->M];
+                } else {
+                    $whoData[$indeks][] = ['x' => $bulan, 'y' => null];
+                }
             }
         }
 
@@ -103,9 +107,9 @@ class Chart extends Component
                 })->first();
                 
                 if ($closest && abs($closest->usia_bulan - $bulan) <= 1.5) {
-                    $cdcData[$indeks][] = (float) $closest->M;
+                    $cdcData[$indeks][] = ['x' => $bulan, 'y' => (float) $closest->M];
                 } else {
-                    $cdcData[$indeks][] = null;
+                    $cdcData[$indeks][] = ['x' => $bulan, 'y' => null];
                 }
             }
         }
